@@ -1,0 +1,6 @@
+{
+  "name": "Doodle Life - Neo-Brutalist AI Assistant",
+  "description": "Offline-first Neo-Brutalism PWA for student & productivity life balance with AI rescheduling, Eisenhower matrix tasks, journal therapy, and wellness unwind.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

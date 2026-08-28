@@ -1,0 +1,21 @@
+{
+  "short_name": "DoodleLife",
+  "name": "Doodle Life - Neo-Brutalist AI Assistant",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FCF9F8",
+  "theme_color": "#FFE66D",
+  "display": "standalone",
+  "orientation": "portrait"
+}

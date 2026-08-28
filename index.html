@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Doodle Life - Neo-Brutalist AI Assistant</title>
+    <meta name="description" content="Offline-first Neo-Brutalism PWA for student & productivity life balance with AI rescheduling, Eisenhower matrix tasks, journal therapy, and wellness unwind." />
+    <meta name="theme-color" content="#FFE66D" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+
+    <meta property="og:title" content="Doodle Life - Neo-Brutalist AI Assistant" />
+    <meta property="og:description" content="Neo-brutalism student productivity and wellness PWA" />
+    <meta property="og:type" content="website" />
+  </head>
+  <body class="bg-[#FCF9F8] text-[#1A1A1A] antialiased selection:bg-[#FFE66D] selection:text-black min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration skipped:', err));
+        });
+      }
+    </script>
+  </body>
+</html>
+
