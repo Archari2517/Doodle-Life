@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { UserProfile, ThemeAccent, Language, EnergyType, Goal } from '../../types';
+import { UserProfile, ThemeAccent, Language, EnergyType, Goal, Routine, RoutineScheduleType, RoutineDurationMode, RoutineCategory } from '../../types';
 import { useTranslation } from '../../utils/translations';
 import { backupService } from '../../services/backupService';
 import { getLocalTodayStr } from '../../utils/date';
+import { getArchivedRoutines } from '../../utils/routineEngine';
 import { ProfileView } from './ProfileView';
 import { 
   ChevronDown, 
@@ -11,22 +12,66 @@ import {
   Check, 
   Download, 
   Upload,
-  LogOut
+  LogOut,
+  Plus,
+  Pencil,
+  Trash2,
+  RotateCcw,
+  Archive,
+  X,
+  Info
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+// เลขเวอร์ชันของแอป — แก้ตรงนี้ทุกครั้งที่ปล่อยอัปเดตใหม่
+const APP_VERSION = '1.0.0';
 
 interface SettingsViewProps {
   user: UserProfile;
   goals?: Goal[];
+  routines?: Routine[];
   onUpdateUser: (updated: Partial<UserProfile>) => void;
   onNavigateToGoals: () => void;
+  onAddRoutine?: (routine: Partial<Routine>) => void;
+  onUpdateRoutine?: (routine: Routine) => void;
+  onDeleteRoutine?: (routineId: string) => void;
+  onToggleRoutineActive?: (routineId: string) => void;
+  onRenewRoutine?: (routineId: string) => void;
+  onLogout?: () => void;
 }
+
+// 🔹 ตัวเลือกวันในสัปดาห์ (แสดงย่อภาษาไทย เก็บค่าจริงเป็นภาษาอังกฤษ)
+const DAYS_OF_WEEK: Array<{ id: string; label: string }> = [
+  { id: 'Mon', label: 'จ.' },
+  { id: 'Tue', label: 'อ.' },
+  { id: 'Wed', label: 'พ.' },
+  { id: 'Thu', label: 'พฤ.' },
+  { id: 'Fri', label: 'ศ.' },
+  { id: 'Sat', label: 'ส.' },
+  { id: 'Sun', label: 'อา.' }
+];
+
+// 🔹 หมวดหมู่กิจวัตร
+const ROUTINE_CATEGORIES: Array<{ id: RoutineCategory; label: string; icon: string }> = [
+  { id: 'study', label: 'เรียน', icon: '📚' },
+  { id: 'health', label: 'สุขภาพ', icon: '💪' },
+  { id: 'chore', label: 'งานบ้าน', icon: '🧹' },
+  { id: 'work', label: 'งาน', icon: '💼' },
+  { id: 'personal', label: 'ส่วนตัว', icon: '🌱' }
+];
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   user,
   goals = [],
+  routines = [],
   onUpdateUser,
-  onNavigateToGoals
+  onNavigateToGoals,
+  onAddRoutine,
+  onUpdateRoutine,
+  onDeleteRoutine,
+  onToggleRoutineActive,
+  onRenewRoutine,
+  onLogout
 }) => {
   const t = useTranslation(user.language);
 
@@ -34,6 +79,140 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [openSection, setOpenSection] = useState<string | null>('display');
   const [syncMessage, setSyncMessage] = useState('');
   const [installPrompt, setInstallPrompt] = useState<any>(null);
+
+  // --- App Version / Update Notes Popup ---
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateNotes, setUpdateNotes] = useState<string>('');
+  const [isLoadingUpdateNotes, setIsLoadingUpdateNotes] = useState(false);
+  const [updateNotesError, setUpdateNotesError] = useState(false);
+
+  const handleOpenUpdateModal = async () => {
+    setShowUpdateModal(true);
+    setIsLoadingUpdateNotes(true);
+    setUpdateNotesError(false);
+    try {
+      // ดึงข้อความจากไฟล์ /public/update.txt — แก้ไฟล์นั้นเพื่อเปลี่ยนข้อความที่แสดงในป็อปอัพนี้
+      const res = await fetch(`/update.txt?t=${Date.now()}`);
+      if (!res.ok) throw new Error('update.txt not found');
+      const text = await res.text();
+      setUpdateNotes(text);
+    } catch (err) {
+      setUpdateNotesError(true);
+    } finally {
+      setIsLoadingUpdateNotes(false);
+    }
+  };
+
+  // ----------------------------------------------------
+  // Routine Form Modal State (สร้าง/แก้ไขกิจวัตร)
+  // ----------------------------------------------------
+  const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false);
+  const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
+  const [routineTitle, setRoutineTitle] = useState('');
+  const [routineScheduleType, setRoutineScheduleType] = useState<RoutineScheduleType>('fixed');
+  const [routineStartTime, setRoutineStartTime] = useState('09:00');
+  const [routineEndTime, setRoutineEndTime] = useState('10:00');
+  const [routineDays, setRoutineDays] = useState<string[]>(['Mon']);
+  const [routineDurationMode, setRoutineDurationMode] = useState<RoutineDurationMode>('indefinite');
+  const [routineStartDate, setRoutineStartDate] = useState(getLocalTodayStr());
+  const [routineEndDate, setRoutineEndDate] = useState(getLocalTodayStr());
+  const [routineCategory, setRoutineCategory] = useState<RoutineCategory>('personal');
+
+  const resetRoutineForm = () => {
+    setRoutineTitle('');
+    setRoutineScheduleType('fixed');
+    setRoutineStartTime('09:00');
+    setRoutineEndTime('10:00');
+    setRoutineDays(['Mon']);
+    setRoutineDurationMode('indefinite');
+    setRoutineStartDate(getLocalTodayStr());
+    setRoutineEndDate(getLocalTodayStr());
+    setRoutineCategory('personal');
+  };
+
+  const openAddRoutineModal = () => {
+    resetRoutineForm();
+    setEditingRoutineId(null);
+    setIsRoutineModalOpen(true);
+  };
+
+  const openEditRoutineModal = (routine: Routine) => {
+    setEditingRoutineId(routine.id);
+    setRoutineTitle(routine.title);
+    setRoutineScheduleType(routine.scheduleType);
+    setRoutineStartTime(routine.startTime || '09:00');
+    setRoutineEndTime(routine.endTime || '10:00');
+    setRoutineDays(routine.days && routine.days.length > 0 ? routine.days : ['Mon']);
+    setRoutineDurationMode(routine.durationMode);
+    setRoutineStartDate(routine.startDate || getLocalTodayStr());
+    setRoutineEndDate(routine.endDate || getLocalTodayStr());
+    setRoutineCategory(routine.category);
+    setIsRoutineModalOpen(true);
+  };
+
+  const closeRoutineModal = () => {
+    setIsRoutineModalOpen(false);
+    setEditingRoutineId(null);
+  };
+
+  // 🔹 กดเลือก/ยกเลิกวันในสัปดาห์ (เลือกได้พร้อมกันหลายวัน)
+  const toggleRoutineDay = (dayId: string) => {
+    setRoutineDays((prev) =>
+      prev.includes(dayId) ? prev.filter((d) => d !== dayId) : [...prev, dayId]
+    );
+  };
+
+  const timeToMinutes = (time: string) => {
+    const [h, m] = time.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+
+  const handleSaveRoutine = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!routineTitle.trim() || routineDays.length === 0) return;
+
+    const payload: Partial<Routine> = {
+      title: routineTitle.trim(),
+      scheduleType: routineScheduleType,
+      startTime: routineScheduleType === 'fixed' ? routineStartTime : undefined,
+      endTime: routineScheduleType === 'fixed' ? routineEndTime : undefined,
+      durationMinutes:
+        routineScheduleType === 'fixed'
+          ? Math.max(0, timeToMinutes(routineEndTime) - timeToMinutes(routineStartTime))
+          : undefined,
+      days: routineDays,
+      durationMode: routineDurationMode,
+      startDate: routineDurationMode === 'date_range' ? routineStartDate : undefined,
+      endDate: routineDurationMode === 'date_range' ? routineEndDate : undefined,
+      category: routineCategory
+    };
+
+    if (editingRoutineId) {
+      const existing = routines.find((r) => r.id === editingRoutineId);
+      if (existing && onUpdateRoutine) {
+        onUpdateRoutine({ ...existing, ...payload } as Routine);
+      }
+    } else if (onAddRoutine) {
+      onAddRoutine({ ...payload, active: true });
+    }
+
+    closeRoutineModal();
+  };
+
+  const handleDeleteRoutine = (routineId: string) => {
+    if (confirm(user.language === 'th' ? 'ลบกิจวัตรนี้ใช่หรือไม่?' : 'Delete this routine?')) {
+      onDeleteRoutine?.(routineId);
+    }
+  };
+
+  // 🗂️ Lifecycle & Categories — แยก Routine ที่ยัง active ออกจาก Routine ที่หมดอายุแล้ว
+  // (status === 'expired' ถูกระบบตั้งอัตโนมัติเมื่อเลย endDate) เพื่อย้ายเข้าหมวด "กิจกรรมที่จบแล้ว"
+  const activeRoutinesList = routines.filter((r) => r.status !== 'expired');
+  const archivedRoutinesList = getArchivedRoutines(routines);
+
+  const handleRenewRoutine = (routineId: string) => {
+    onRenewRoutine?.(routineId);
+  };
 
   React.useEffect(() => {
     const handleBeforeInstall = (e: Event) => {
@@ -104,12 +283,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           setIsEditingProfile(false);
         }}
         onBack={() => setIsEditingProfile(false)}
-        onLogout={() => {
-          if (confirm('Reset local state to fresh demo seed?')) {
-            localStorage.clear();
-            window.location.reload();
-          }
-        }}
+        onLogout={onLogout}
       />
     );
   }
@@ -207,6 +381,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <span className="text-gray-600 dark:text-gray-400 mb-2 block">{t.themeAccent}</span>
               <div className="flex items-center gap-3">
                 {[
+                  { id: 'blue', color: '#A8D8FF' },
                   { id: 'yellow', color: '#FFE66D' },
                   { id: 'coral', color: '#FF9F9F' },
                   { id: 'sky', color: '#9DD9D2' },
@@ -284,24 +459,141 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         {openSection === 'routines' && (
           <div className="p-4 pt-1 border-t-2 border-black dark:border-slate-700 space-y-2.5 text-xs">
-            {[
-              { title: 'Morning Sunlight & Routine', time: '07:00 - 07:30', icon: '🌅' },
-              { title: 'Deep Focus Coding Block', time: user.peakHours, icon: '⚡' },
-              { title: 'Evening Wind Down & Journal', time: '21:30 - 22:15', icon: '🌙' }
-            ].map((r, i) => (
-              <div key={i} className="bg-gray-50 dark:bg-[#0f172a] doodle-border-sm p-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                  <span>{r.icon}</span>
-                  <span className="font-bold">{r.title}</span>
-                </div>
-                <span className="font-black text-[10px] bg-accent text-[#1A1A1A] px-2 py-0.5 rounded border border-black">
-                  {r.time}
-                </span>
-              </div>
-            ))}
+            {activeRoutinesList.length === 0 ? (
+              <p className="text-gray-500 dark:text-gray-400 font-medium text-center py-2">
+                {user.language === 'th' ? 'ยังไม่มีกิจวัตร กดปุ่มด้านล่างเพื่อเพิ่ม' : 'No routines yet. Add one below.'}
+              </p>
+            ) : (
+              activeRoutinesList.map((r) => {
+                const cat = ROUTINE_CATEGORIES.find((c) => c.id === r.category);
+                const dayLabels = r.days
+                  .map((d) => DAYS_OF_WEEK.find((dw) => dw.id === d)?.label || d)
+                  .join(' ');
+                return (
+                  <div
+                    key={r.id}
+                    className={`bg-gray-50 dark:bg-[#0f172a] doodle-border-sm p-2.5 space-y-1.5 ${
+                      !r.active ? 'opacity-50' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200 min-w-0">
+                      <span>{cat?.icon || '📌'}</span>
+                      <span className="font-bold truncate">{r.title}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className="font-black text-[10px] bg-accent text-[#1A1A1A] px-2 py-0.5 rounded border border-black">
+                          {r.scheduleType === 'fixed' ? `${r.startTime} - ${r.endTime}` : (user.language === 'th' ? 'ไม่ระบุเวลา' : 'Flex Habit')}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                          {dayLabels}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => openEditRoutineModal(r)}
+                          className="p-1.5 bg-white dark:bg-[#1e293b] doodle-border-sm doodle-btn"
+                          title="Edit"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRoutine(r.id)}
+                          className="p-1.5 bg-white dark:bg-[#1e293b] doodle-border-sm doodle-btn text-red-600"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            <button
+              type="button"
+              onClick={openAddRoutineModal}
+              className="w-full py-2.5 bg-accent doodle-border-sm font-black doodle-btn flex items-center justify-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" /> {user.language === 'th' ? 'เพิ่มกิจวัตร' : 'Add Routine'}
+            </button>
           </div>
         )}
       </div>
+
+      {/* Accordion 3.5: Archive — กิจกรรมที่จบแล้ว (Routine ที่หมดอายุ) */}
+      {archivedRoutinesList.length > 0 && (
+        <div className="bg-white dark:bg-[#1e293b] doodle-border doodle-shadow overflow-hidden transition-colors">
+          <button
+            onClick={() => toggleSection('archive')}
+            className="w-full p-4 flex items-center justify-between font-extrabold text-sm font-['Space_Grotesk'] text-gray-900 dark:text-gray-100"
+          >
+            <span className="flex items-center gap-2">
+              <Archive className="w-4 h-4" />
+              {user.language === 'th' ? 'กิจกรรมที่จบแล้ว (Archive)' : 'Completed / Archive'}
+              <span className="text-[10px] font-black bg-gray-200 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">
+                {archivedRoutinesList.length}
+              </span>
+            </span>
+            {openSection === 'archive' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+
+          {openSection === 'archive' && (
+            <div className="p-4 pt-1 border-t-2 border-black dark:border-slate-700 space-y-2.5 text-xs">
+              {archivedRoutinesList.map((r) => {
+                const cat = ROUTINE_CATEGORIES.find((c) => c.id === r.category);
+                const dayLabels = r.days
+                  .map((d) => DAYS_OF_WEEK.find((dw) => dw.id === d)?.label || d)
+                  .join(' ');
+                return (
+                  <div
+                    key={r.id}
+                    className="bg-gray-50 dark:bg-[#0f172a] doodle-border-sm p-2.5 space-y-1.5 opacity-70"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200 min-w-0">
+                        <span>{cat?.icon || '📌'}</span>
+                        <span className="font-bold truncate line-through">{r.title}</span>
+                      </div>
+                      <span className="shrink-0 text-[9px] font-black uppercase bg-gray-300 dark:bg-slate-600 px-1.5 py-0.5 rounded border border-gray-500">
+                        {user.language === 'th' ? 'หมดอายุ' : 'Expired'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                        {dayLabels} {r.endDate ? `· ${user.language === 'th' ? 'สิ้นสุด' : 'ended'} ${r.endDate}` : ''}
+                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleRenewRoutine(r.id)}
+                          className="p-1.5 bg-white dark:bg-[#1e293b] doodle-border-sm doodle-btn"
+                          title={user.language === 'th' ? 'ตั้งต่อ' : 'Renew'}
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRoutine(r.id)}
+                          className="p-1.5 bg-white dark:bg-[#1e293b] doodle-border-sm doodle-btn text-red-600"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Item 4: Goals & Objectives */}
       <button
@@ -371,22 +663,295 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <p>• <strong>Offline Database:</strong> Dexie.js (IndexedDB 4.x)</p>
             <p>• <strong>Design Archetype:</strong> Neo-Brutalism ("Doodle Theory")</p>
             <p>• <strong>AI Model:</strong> Gemini 3.7 Flash Free Tier</p>
+
+            <button
+              onClick={handleOpenUpdateModal}
+              className="w-full mt-2 p-2.5 bg-gray-100 dark:bg-[#0f172a] text-gray-900 dark:text-gray-100 doodle-border-sm doodle-btn flex items-center justify-between font-bold text-[11px]"
+            >
+              <span className="flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5" />
+                {user.language === 'th' ? 'เวอร์ชันแอป' : 'App Version'}
+              </span>
+              <span className="text-gray-500 dark:text-gray-400">v{APP_VERSION} →</span>
+            </button>
           </div>
         )}
       </div>
 
       {/* Log Out Button */}
       <button
-        onClick={() => {
-          if (confirm('Reset local state to fresh demo seed?')) {
-            localStorage.clear();
-            window.location.reload();
-          }
-        }}
+        onClick={onLogout}
         className="w-full bg-white dark:bg-[#1e293b] text-[#93000A] dark:text-red-400 doodle-border border-[#93000A] dark:border-red-400 p-4 font-black text-sm flex items-center justify-center gap-2 doodle-btn doodle-shadow hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
       >
         <LogOut className="w-4 h-4" /> {t.logout}
       </button>
+
+      {/* ✏️ Routine Create/Edit Modal */}
+      {isRoutineModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white doodle-border doodle-shadow-lg max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b-2 border-black pb-2">
+              <h3 className="font-extrabold text-lg font-['Bricolage_Grotesque']">
+                {editingRoutineId
+                  ? (user.language === 'th' ? 'แก้ไขกิจวัตร' : 'Edit Routine')
+                  : (user.language === 'th' ? 'เพิ่มกิจวัตรใหม่' : 'Add New Routine')}
+              </h3>
+              <button
+                type="button"
+                onClick={closeRoutineModal}
+                className="p-1 hover:bg-gray-100 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRoutine} className="space-y-3 text-xs font-bold">
+              {/* ชื่อกิจวัตร */}
+              <div>
+                <label className="block mb-1 text-gray-700">
+                  {user.language === 'th' ? 'ชื่อกิจวัตร' : 'Routine Title'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={routineTitle}
+                  onChange={(e) => setRoutineTitle(e.target.value)}
+                  placeholder={user.language === 'th' ? 'เช่น อ่านหนังสือก่อนนอน' : 'e.g. Read before bed'}
+                  className="w-full px-3 py-2 doodle-border-sm bg-white focus:outline-none focus:bg-amber-50"
+                />
+              </div>
+
+              {/* 1. ประเภทกิจกรรม: Fixed Time vs Flex Habit */}
+              <div>
+                <label className="block mb-1 text-gray-700">
+                  {user.language === 'th' ? 'ประเภทกิจกรรม' : 'Type'}
+                </label>
+                <div className="flex bg-gray-100 doodle-border-sm p-1 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setRoutineScheduleType('fixed')}
+                    className={`flex-1 py-1.5 rounded-md text-[11px] font-black transition-colors ${
+                      routineScheduleType === 'fixed' ? 'bg-[#1A1A1A] text-white' : 'text-gray-600'
+                    }`}
+                  >
+                    {user.language === 'th' ? 'เวลาตายตัว' : 'Fixed Time'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoutineScheduleType('flex')}
+                    className={`flex-1 py-1.5 rounded-md text-[11px] font-black transition-colors ${
+                      routineScheduleType === 'flex' ? 'bg-[#1A1A1A] text-white' : 'text-gray-600'
+                    }`}
+                  >
+                    {user.language === 'th' ? 'ไม่ระบุเวลา' : 'Flex Habit'}
+                  </button>
+                </div>
+
+                {routineScheduleType === 'fixed' ? (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div>
+                      <label className="block mb-1 text-gray-700">
+                        {user.language === 'th' ? 'เริ่ม' : 'Start'}
+                      </label>
+                      <input
+                        type="time"
+                        value={routineStartTime}
+                        onChange={(e) => setRoutineStartTime(e.target.value)}
+                        className="w-full px-2 py-2 doodle-border-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-gray-700">
+                        {user.language === 'th' ? 'สิ้นสุด' : 'End'}
+                      </label>
+                      <input
+                        type="time"
+                        value={routineEndTime}
+                        onChange={(e) => setRoutineEndTime(e.target.value)}
+                        className="w-full px-2 py-2 doodle-border-sm bg-white"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[10px] font-semibold text-gray-500 mt-2">
+                    {user.language === 'th'
+                      ? 'กิจวัตรนี้ไม่ต้องระบุเวลา แค่ลงไว้ในตารางว่าต้องทำวันไหนบ้าง'
+                      : 'No specific time needed — just scheduled on the days below.'}
+                  </p>
+                )}
+              </div>
+
+              {/* 2. วันในสัปดาห์ */}
+              <div>
+                <label className="block mb-1 text-gray-700">
+                  {user.language === 'th' ? 'วันในสัปดาห์' : 'Days of Week'}
+                </label>
+                <div className="flex gap-1 flex-wrap">
+                  {DAYS_OF_WEEK.map((day) => {
+                    const isSelected = routineDays.includes(day.id);
+                    return (
+                      <button
+                        key={day.id}
+                        type="button"
+                        onClick={() => toggleRoutineDay(day.id)}
+                        className={`w-9 h-9 rounded-full doodle-border-sm text-[11px] font-black doodle-btn ${
+                          isSelected ? 'bg-accent' : 'bg-white text-gray-500'
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {routineDays.length === 0 && (
+                  <p className="text-[10px] font-semibold text-red-600 mt-1">
+                    {user.language === 'th' ? 'เลือกอย่างน้อย 1 วัน' : 'Select at least 1 day'}
+                  </p>
+                )}
+              </div>
+
+              {/* 3. เงื่อนไขระยะเวลา: Indefinite vs Date Range */}
+              <div>
+                <label className="block mb-1 text-gray-700">
+                  {user.language === 'th' ? 'ระยะเวลาของกิจวัตร' : 'Duration'}
+                </label>
+                <div className="flex bg-gray-100 doodle-border-sm p-1 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setRoutineDurationMode('indefinite')}
+                    className={`flex-1 py-1.5 rounded-md text-[11px] font-black transition-colors ${
+                      routineDurationMode === 'indefinite' ? 'bg-[#1A1A1A] text-white' : 'text-gray-600'
+                    }`}
+                  >
+                    {user.language === 'th' ? 'ตลอดไป' : 'Indefinite'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoutineDurationMode('date_range')}
+                    className={`flex-1 py-1.5 rounded-md text-[11px] font-black transition-colors ${
+                      routineDurationMode === 'date_range' ? 'bg-[#1A1A1A] text-white' : 'text-gray-600'
+                    }`}
+                  >
+                    {user.language === 'th' ? 'กำหนดวันที่' : 'Date Range'}
+                  </button>
+                </div>
+
+                {routineDurationMode === 'date_range' && (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div>
+                      <label className="block mb-1 text-gray-700">
+                        {user.language === 'th' ? 'วันเริ่มต้น' : 'Start Date'}
+                      </label>
+                      <input
+                        type="date"
+                        value={routineStartDate}
+                        onChange={(e) => setRoutineStartDate(e.target.value)}
+                        className="w-full px-2 py-2 doodle-border-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-gray-700">
+                        {user.language === 'th' ? 'วันสิ้นสุด' : 'End Date'}
+                      </label>
+                      <input
+                        type="date"
+                        value={routineEndDate}
+                        min={routineStartDate}
+                        onChange={(e) => setRoutineEndDate(e.target.value)}
+                        className="w-full px-2 py-2 doodle-border-sm bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. หมวดหมู่ */}
+              <div>
+                <label className="block mb-1 text-gray-700">
+                  {user.language === 'th' ? 'หมวดหมู่' : 'Category'}
+                </label>
+                <select
+                  value={routineCategory}
+                  onChange={(e) => setRoutineCategory(e.target.value as RoutineCategory)}
+                  className="w-full px-2 py-2 doodle-border-sm bg-white"
+                >
+                  {ROUTINE_CATEGORIES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.icon} {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={closeRoutineModal}
+                  className="flex-1 py-2.5 bg-gray-100 doodle-border-sm font-bold doodle-btn"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={routineDays.length === 0}
+                  className="flex-1 py-2.5 bg-accent doodle-border-sm font-black doodle-btn disabled:opacity-50"
+                >
+                  {t.save}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🆕 App Version / Update Notes Popup */}
+      {showUpdateModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1e293b] doodle-border doodle-shadow-lg max-w-md w-full p-5 space-y-4 max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center border-b-2 border-black dark:border-slate-700 pb-2 shrink-0">
+              <div>
+                <h3 className="font-extrabold text-lg font-['Bricolage_Grotesque'] text-gray-900 dark:text-gray-100">
+                  {user.language === 'th' ? 'ข้อมูลการอัปเดต' : 'Update Notes'}
+                </h3>
+                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                  v{APP_VERSION}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowUpdateModal(false)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full"
+              >
+                <X className="w-5 h-5 text-gray-900 dark:text-gray-100" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto text-xs font-medium text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+              {isLoadingUpdateNotes ? (
+                <p className="text-gray-400 dark:text-gray-500">
+                  {user.language === 'th' ? 'กำลังโหลด...' : 'Loading...'}
+                </p>
+              ) : updateNotesError ? (
+                <p className="text-gray-400 dark:text-gray-500">
+                  {user.language === 'th'
+                    ? 'ไม่พบไฟล์ update.txt — เพิ่มไฟล์นี้ในโฟลเดอร์ public เพื่อแสดงข้อมูลตรงนี้'
+                    : 'update.txt not found — add this file to your public folder to show notes here.'}
+                </p>
+              ) : (
+                updateNotes
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowUpdateModal(false)}
+              className="w-full py-2.5 bg-accent doodle-border-sm font-black doodle-btn shrink-0"
+            >
+              {user.language === 'th' ? 'ปิด' : 'Close'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -58,6 +58,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
 
   // Ambient sound player state
   const [ambientSound, setAmbientSound] = useState<'rain' | 'stream' | 'binaural' | null>(null);
+  const [ambientVolume, setAmbientVolume] = useState(0.18); // 🔹 ระดับเสียง Ambient (0-1)
 
   // Helper dates
   const daysAgoStr = (n: number) => {
@@ -300,9 +301,16 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
       audioSynth.stopAmbientSound();
       setAmbientSound(null);
     } else {
+      audioSynth.setVolume(ambientVolume);
       audioSynth.startAmbientSound(type);
       setAmbientSound(type);
     }
+  };
+
+  // 🔹 ลาก Slider เพื่อเพิ่ม-ลดความดังเสียง Ambient แบบเรียลไทม์
+  const handleAmbientVolumeChange = (value: number) => {
+    setAmbientVolume(value);
+    audioSynth.setVolume(value);
   };
 
   const handleAddUnwindToCalendar = (title: string, duration: number, category = 'UNWIND') => {
@@ -806,6 +814,26 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                   );
                 })}
               </div>
+
+              {/* 🔊 ปรับความดังเสียง Ambient */}
+              {ambientSound && (
+                <div className="flex items-center gap-2 bg-white doodle-border-sm px-3 py-2">
+                  <span className="text-sm shrink-0">🔈</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={ambientVolume}
+                    onChange={(e) => handleAmbientVolumeChange(Number(e.target.value))}
+                    className="w-full accent-[#1A1A1A] cursor-pointer"
+                  />
+                  <span className="text-sm shrink-0">🔊</span>
+                  <span className="text-[10px] font-black w-8 text-right shrink-0">
+                    {Math.round(ambientVolume * 100)}%
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

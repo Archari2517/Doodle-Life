@@ -1,5 +1,5 @@
 export type EnergyType = 'morning_owl' | 'afternoon_lion' | 'night_owl';
-export type ThemeAccent = 'yellow' | 'coral' | 'sky' | 'mint';
+export type ThemeAccent = 'yellow' | 'coral' | 'sky' | 'mint' | 'blue';
 export type Language = 'en' | 'th';
 export type EisenhowerQuadrant = 'now' | 'plan' | 'quick' | 'chill';
 export type GoalType = 'short_term' | 'long_term';
@@ -42,7 +42,15 @@ export interface Task {
   tags?: string[];
   createdAt: string;
   updatedAt?: string;
+  // 🔁 Routine Generation Engine — เมื่อ Task ถูกสร้างจาก Routine (ไม่ใช่สร้างมือ)
+  routineId?: string; // อ้างอิงกลับไปยัง Routine.id ที่เป็นต้นกำเนิดของ Event นี้ (ไม่มีค่า = สร้างเองโดยผู้ใช้)
+  isRoutineGenerated?: boolean; // true = ระบบสร้างให้อัตโนมัติจาก Routine
 }
+
+// CalendarEvent คือ Task ที่ถูกลงบนตารางปฏิทินในวันใดวันหนึ่ง
+// ในระบบนี้ CalendarEvent กับ Task ใช้โครงสร้างเดียวกัน (Event ที่มาจาก Routine
+// ก็คือ Task ปกติที่มี routineId/isRoutineGenerated กำกับไว้) จึงไม่ต้องแยก collection ใหม่
+export type CalendarEvent = Task;
 
 export interface Goal {
   id: string;
@@ -64,15 +72,29 @@ export interface Goal {
   isPinned?: boolean; // เป้าหมายที่เลือกให้แสดงบนหน้า Tasks
 }
 
+export type RoutineScheduleType = 'fixed' | 'flex'; // Fixed Time (มีเวลาชัดเจน) | Flex Habit (ไม่มีเวลา แต่ลงตารางไว้)
+export type RoutineDurationMode = 'indefinite' | 'date_range'; // ตลอดไป | กำหนดวันเริ่ม-สิ้นสุด
+export type RoutineCategory = 'study' | 'health' | 'chore' | 'work' | 'personal';
+export type RoutineStatus = 'active' | 'expired'; // active = ปกติ | expired = เลย endDate แล้ว ถูกย้ายเข้า Archive อัตโนมัติ
+
 export interface Routine {
   id: string;
   title: string;
-  type: 'morning' | 'evening' | 'focus' | 'rest';
-  startTime: string; // "07:00"
-  endTime: string; // "08:00"
-  durationMinutes: number;
-  days: string[]; // ["Mon", "Tue", "Wed", "Thu", "Fri"]
+  scheduleType: RoutineScheduleType;
+  startTime?: string; // "13:00" — ใช้เมื่อ scheduleType เป็น 'fixed' เท่านั้น
+  endTime?: string; // "16:00" — ใช้เมื่อ scheduleType เป็น 'fixed' เท่านั้น
+  durationMinutes?: number;
+  days: string[]; // ["Mon", "Wed", "Fri"] — วันในสัปดาห์ที่ทำกิจวัตรนี้
+  durationMode: RoutineDurationMode;
+  startDate?: string; // YYYY-MM-DD — ใช้เมื่อ durationMode เป็น 'date_range' เท่านั้น
+  endDate?: string; // YYYY-MM-DD — ใช้เมื่อ durationMode เป็น 'date_range' เท่านั้น
+  category: RoutineCategory;
   active: boolean;
+  // 🗂️ Lifecycle & Categories — จัดการการหมดอายุของ Routine
+  status?: RoutineStatus; // ค่าเริ่มต้นถือว่าเป็น 'active' ถ้าไม่ระบุ ระบบจะตั้งเป็น 'expired' อัตโนมัติเมื่อเลย endDate
+  expiredAcknowledged?: boolean; // ผู้ใช้กดรับทราบ/ปิด popup แจ้งเตือนหมดอายุของ Routine นี้แล้ว
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface JournalEntry {

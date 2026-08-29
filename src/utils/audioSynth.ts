@@ -6,9 +6,11 @@
 class AudioSynthesizer {
   private ctx: AudioContext | null = null;
   private currentSource: AudioNode | null = null;
+  private extraSources: AudioNode[] = [];
   private gainNode: GainNode | null = null;
   private isPlaying = false;
   private currentTrackType: 'rain' | 'stream' | 'binaural' | null = null;
+  private volume = 0.18; // 🔹 ระดับเสียงปัจจุบัน (0 - 1) จำค่าไว้ใช้ตอนเริ่มเพลงใหม่
 
   private initContext() {
     if (!this.ctx) {
@@ -54,7 +56,7 @@ class AudioSynthesizer {
     this.isPlaying = true;
 
     this.gainNode = this.ctx.createGain();
-    this.gainNode.gain.setValueAtTime(0.18, this.ctx.currentTime);
+    this.gainNode.gain.setValueAtTime(this.volume, this.ctx.currentTime);
     this.gainNode.connect(this.ctx.destination);
 
     if (type === 'rain' || type === 'stream') {
@@ -104,6 +106,7 @@ class AudioSynthesizer {
       osc1.start();
       osc2.start();
       this.currentSource = osc1;
+      this.extraSources = [osc2]; // 🔹 เก็บ osc2 ไว้ด้วย เพื่อให้หยุดเสียงได้ครบทั้งคู่ตอนกดปิด
     }
   }
 
@@ -114,12 +117,34 @@ class AudioSynthesizer {
       } catch (e) {}
       this.currentSource = null;
     }
+    // 🔹 หยุดเสียงที่เหลือทั้งหมด (เช่น osc2 ของ Binaural) ไม่ให้ค้างเล่นต่อ
+    if (this.extraSources.length > 0) {
+      this.extraSources.forEach((src) => {
+        try {
+          (src as any).stop?.();
+        } catch (e) {}
+      });
+      this.extraSources = [];
+    }
     this.isPlaying = false;
     this.currentTrackType = null;
   }
 
   public getPlaybackState() {
     return { isPlaying: this.isPlaying, track: this.currentTrackType };
+  }
+
+  // 🔹 ปรับความดังเสียง Ambient แบบเรียลไทม์ (0 = เงียบ, 1 = ดังสุด)
+  public setVolume(value: number) {
+    const clamped = Math.min(1, Math.max(0, value));
+    this.volume = clamped;
+    if (this.gainNode && this.ctx) {
+      this.gainNode.gain.setValueAtTime(clamped, this.ctx.currentTime);
+    }
+  }
+
+  public getVolume() {
+    return this.volume;
   }
 }
 

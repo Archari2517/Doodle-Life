@@ -15,7 +15,7 @@ export class DoodleDatabase extends Dexie {
       users: 'id, email',
       tasks: 'id, dueDate, completed, goalId, eisenhowerQuadrant',
       goals: 'id, timeframe, category, goalType',
-      routines: 'id, type, active',
+      routines: 'id, scheduleType, category, active',
       journal_entries: 'id, date, mood'
     });
   }
@@ -31,7 +31,7 @@ export const DEFAULT_USER: UserProfile = {
   avatarUrl: 'https://cdn.pfps.gg/pfps/5129-default-blue.png',
   energyType: 'morning_owl',
   peakHours: '08:00 - 12:00',
-  themeAccent: 'yellow',
+  themeAccent: 'blue',
   darkMode: false,
   language: 'en',
   dailyFreeHoursTarget: 3.5,
@@ -212,32 +212,38 @@ export async function seedInitialDataIfNeeded() {
     {
       id: 'routine_1',
       title: 'Morning Sunlight & Espresso',
-      type: 'morning',
+      scheduleType: 'fixed',
       startTime: '07:00',
       endTime: '07:30',
       durationMinutes: 30,
       days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-      active: true
+      durationMode: 'indefinite',
+      category: 'health',
+      active: true,
+      createdAt: new Date().toISOString()
     },
     {
       id: 'routine_2',
       title: 'Peak Focus Coding Block',
-      type: 'focus',
+      scheduleType: 'fixed',
       startTime: '09:00',
       endTime: '11:30',
       durationMinutes: 150,
       days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-      active: true
+      durationMode: 'indefinite',
+      category: 'work',
+      active: true,
+      createdAt: new Date().toISOString()
     },
     {
       id: 'routine_3',
       title: 'Evening Journal & Decompress',
-      type: 'evening',
-      startTime: '21:30',
-      endTime: '22:15',
-      durationMinutes: 45,
+      scheduleType: 'flex',
       days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      active: true
+      durationMode: 'indefinite',
+      category: 'personal',
+      active: true,
+      createdAt: new Date().toISOString()
     }
   ];
   await db.routines.bulkAdd(initialRoutines);

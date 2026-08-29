@@ -179,7 +179,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </option>
                 ))
               ) : (
-                <option value="deep-work">Deep Work</option>
+                <>
+                  <option value="deep-work">Deep Work</option>
+                  <option value="study">Study & Learning</option>
+                  <option value="career">Career Growth</option>
+                  <option value="fitness">Health & Fitness</option>
+                  <option value="finance">Finance</option>
+                  <option value="creative">Creative Projects</option>
+                  <option value="personal">Personal Life</option>
+                </>
               )}
             </select>
             <ChevronDown className="w-4 h-4 text-black absolute right-3 top-3 pointer-events-none stroke-[2.5]" />

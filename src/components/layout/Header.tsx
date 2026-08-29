@@ -102,9 +102,6 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          <div className="w-7 h-7 rounded-full bg-accent text-[#1A1A1A] border-2 border-black flex items-center justify-center font-bold text-xs doodle-shadow-sm">
-            ⚡
-          </div>
         </div>
       </div>
     </header>

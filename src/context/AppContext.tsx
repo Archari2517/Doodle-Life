@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { UserProfile, Task, Goal, Routine, JournalEntry, ActiveTab } from '../types';
+import { UserProfile, Task, Goal, Routine, JournalEntry, ActiveTab, CalendarEvent } from '../types';
 import { 
   auth, 
   db, 
@@ -12,6 +12,7 @@ import {
 import { onAuthStateChanged, getRedirectResult, User as FirebaseUser } from 'firebase/auth';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { getLocalTodayStr } from '../utils/date';
+import { generateEventsForRange, getMonthRange, findNewlyExpiredRoutines } from '../utils/routineEngine';
 
 interface RescheduleProposal {
   taskId: string;
@@ -46,6 +47,13 @@ interface AppContextType {
   deleteGoal: (goalId: string) => Promise<void>;
   toggleGoalComplete: (goalId: string) => Promise<void>;
   togglePinGoal: (goalId: string) => Promise<void>;
+  addRoutine: (routine: Partial<Routine>) => Promise<void>;
+  updateRoutine: (routine: Routine) => Promise<void>;
+  deleteRoutine: (routineId: string) => Promise<void>;
+  toggleRoutineActive: (routineId: string) => Promise<void>;
+  ensureMonthEvents: (monthDate: Date) => Promise<void>;
+  renewRoutine: (routineId: string, newEndDate?: string) => Promise<void>;
+  acknowledgeRoutineExpiry: (routineId: string) => Promise<void>;
   addJournal: (entry: Partial<JournalEntry>) => Promise<void>;
   deleteJournal: (journalId: string) => Promise<void>;
 }
@@ -112,6 +120,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setGoals(items);
         });
 
+        const unsubRoutines = onSnapshot(collection(db, 'users', fbUser.uid, 'routines'), (snap) => {
+          const items: Routine[] = [];
+          snap.forEach((d) => items.push(d.data() as Routine));
+          setRoutines(items);
+
+          // 🕒 Lifecycle Check (Cron Job แบบเบา ๆ) — รันทุกครั้งที่เปิดแอป/ข้อมูล routines อัปเดต
+          // หา Routine ที่เลย endDate ไปแล้วแต่ยังไม่ถูกตั้งเป็น 'expired' แล้วย้ายเข้าหมวด Archive
+          const todayStr = getLocalTodayStr();
+          const newlyExpired = findNewlyExpiredRoutines(items, todayStr);
+          if (newlyExpired.length > 0) {
+            const expiryBatch = writeBatch(db);
+            newlyExpired.forEach((r) => {
+              expiryBatch.set(
+                doc(db, 'users', fbUser.uid, 'routines', r.id),
+                {
+                  status: 'expired',
+                  active: false,
+                  expiredAcknowledged: false,
+                  updatedAt: new Date().toISOString()
+                },
+                { merge: true }
+              );
+            });
+            expiryBatch.commit().catch((err) => console.error('Failed to expire routines:', err));
+          }
+        });
+
         const unsubJournals = onSnapshot(collection(db, 'users', fbUser.uid, 'journals'), (snap) => {
           const items: JournalEntry[] = [];
           snap.forEach((d) => items.push(d.data() as JournalEntry));
@@ -123,11 +158,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           unsubProfile();
           unsubTasks();
           unsubGoals();
+          unsubRoutines();
           unsubJournals();
         };
       } else {
         setTasks([]);
         setGoals([]);
+        setRoutines([]);
         setJournals([]);
         setIsSyncing(false);
       }
@@ -171,7 +208,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       categoryColor: taskData.categoryColor || (taskData.category === 'MEETING' ? '#ff9f9f' : taskData.category === 'DATABASE' ? '#b0beff' : '#ffe66d'),
       durationMinutes: taskData.durationMinutes || 30,
       dueDate: taskData.dueDate || getLocalTodayStr(),
-      dueTime: taskData.dueTime || '10:00',
+      // ⚠️ ใช้ ?? แทน || เพราะ '' (ไม่ระบุเวลา / Flex Task) เป็นค่าที่ถูกต้อง ไม่ควรถูกแทนที่ด้วยค่า default
+      // (|| จะมองว่า '' เป็น falsy แล้วเซ็ตเป็น '10:00' ทั้งที่ผู้ใช้ตั้งใจไม่ระบุเวลา)
+      dueTime: taskData.dueTime ?? '10:00',
       eisenhowerQuadrant: taskData.eisenhowerQuadrant || 'now',
       goalId: taskData.goalId || null,
       completed: false,
@@ -302,6 +341,173 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await batch.commit();
   };
 
+  // ----------------------------------------------------
+  // Routine CRUD (กิจวัตรประจำวัน / กฎการทำซ้ำ)
+  // ----------------------------------------------------
+
+  // ----------------------------------------------------
+  // 🔁 Routine Generation Engine
+  // ----------------------------------------------------
+  // นำ CalendarEvent ที่คำนวณได้ ไป Append (เพิ่มต่อท้าย) ลงตาราง Event (tasks) เดิม
+  // โดยข้าม Event ที่มี id ซ้ำกับที่มีอยู่แล้ว (id เป็น deterministic ต่อ routineId+วันที่
+  // อยู่แล้ว) เพื่อไม่ให้ Event ซ้ำ และไม่ไปทับสถานะ completed ของ Event เดิมที่ผู้ใช้ทำไปแล้ว
+  const appendGeneratedEvents = async (events: CalendarEvent[]) => {
+    if (!authUser || events.length === 0) return;
+    const existingIds = new Set(tasks.map((t) => t.id));
+    const eventsToAdd = events.filter((ev) => !existingIds.has(ev.id));
+    if (eventsToAdd.length === 0) return;
+
+    const batch = writeBatch(db);
+    eventsToAdd.forEach((ev) => {
+      batch.set(doc(db, 'users', authUser.uid, 'tasks', ev.id), ev);
+    });
+    await batch.commit();
+  };
+
+  // ----------------------------------------------------
+  // 🔁 Routine Generation Engine — ลบ Event ที่ผูกกับ Routine ออกจากตาราง
+  // ----------------------------------------------------
+  // ใช้ 2 กรณี:
+  //  1) ลบ Routine ทิ้งทั้งตัว (deleteRoutine) ➔ ไม่ระบุ fromDateStr ➔ ลบ Event ทุกวัน
+  //     ที่มาจาก Routine นี้ ทั้งอดีตและอนาคต เพราะถือว่า Event ทั้งหมดถูกยกเลิกไปด้วย
+  //  2) ปิดใช้งาน Routine ชั่วคราว (toggleRoutineActive ➔ inactive) ➔ ระบุ fromDateStr = วันนี้
+  //     ➔ ลบเฉพาะ Event ตั้งแต่วันนี้เป็นต้นไป ส่วน Event ในอดีตที่เคยทำไปแล้วยังคงไว้เป็นประวัติ
+  //
+  // หมายเหตุ: state `tasks` มาจาก onSnapshot ของ Firestore โดยตรง ดังนั้นแค่ setState/filter
+  // ฝั่ง local ไม่พอ (ข้อมูลจะโผล่กลับมาใหม่จาก snapshot) ต้องลบ document จริงใน Firestore
+  const deleteRoutineEvents = async (routineId: string, fromDateStr?: string) => {
+    if (!authUser) return;
+    const eventsToDelete = tasks.filter(
+      (t) => t.routineId === routineId && (!fromDateStr || t.dueDate >= fromDateStr)
+    );
+    if (eventsToDelete.length === 0) return;
+
+    const batch = writeBatch(db);
+    eventsToDelete.forEach((ev) => {
+      batch.delete(doc(db, 'users', authUser.uid, 'tasks', ev.id));
+    });
+    await batch.commit();
+  };
+
+  // เมื่อเปลี่ยนเดือน (หรือมี Routine ใหม่/เปลี่ยนแปลงในเดือนที่กำลังดูอยู่):
+  // ดึง Routine ที่ active ทั้งหมดมาคำนวณ Event ของทั้งเดือนนั้น แล้ว Append เข้าตาราง
+  const ensureMonthEvents = async (monthDate: Date) => {
+    if (!authUser) return;
+    const { start, end } = getMonthRange(monthDate);
+    const activeRoutines = routines.filter((r) => r.active);
+    const monthEvents = generateEventsForRange(activeRoutines, start, end);
+    await appendGeneratedEvents(monthEvents);
+  };
+
+  const addRoutine = async (routineData: Partial<Routine>) => {
+    if (!authUser) return;
+    const routineId = `routine_${Date.now()}`;
+    const scheduleType = routineData.scheduleType || 'fixed';
+    const newRoutine: Routine = {
+      id: routineId,
+      title: routineData.title || 'New Routine',
+      scheduleType,
+      startTime: scheduleType === 'fixed' ? (routineData.startTime || '09:00') : undefined,
+      endTime: scheduleType === 'fixed' ? (routineData.endTime || '10:00') : undefined,
+      durationMinutes: routineData.durationMinutes,
+      days: routineData.days && routineData.days.length > 0 ? routineData.days : ['Mon'],
+      durationMode: routineData.durationMode || 'indefinite',
+      startDate: routineData.durationMode === 'date_range' ? routineData.startDate : undefined,
+      endDate: routineData.durationMode === 'date_range' ? routineData.endDate : undefined,
+      category: routineData.category || 'personal',
+      active: routineData.active ?? true,
+      createdAt: new Date().toISOString()
+    };
+    await setDoc(doc(db, 'users', authUser.uid, 'routines', routineId), newRoutine);
+
+    // 🆕 On Create Routine: สร้าง Event ทันทีตั้งแต่วันนี้ (Today) ➔ วันสุดท้ายของเดือนปัจจุบัน
+    // แล้ว Append ต่อท้ายตาราง Event เดิมที่มีอยู่ทันที
+    const todayStr = getLocalTodayStr();
+    const { end: monthEndStr } = getMonthRange(new Date());
+    const newEvents = generateEventsForRange([newRoutine], todayStr, monthEndStr);
+    await appendGeneratedEvents(newEvents);
+  };
+
+  const updateRoutine = async (routine: Routine) => {
+    if (!authUser) return;
+    await setDoc(doc(db, 'users', authUser.uid, 'routines', routine.id), {
+      ...routine,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  };
+
+  const deleteRoutine = async (routineId: string) => {
+    if (!authUser) return;
+    // 🗑️ Event ทั้งหมดที่สร้างจาก Routine นี้ (ทั้งอดีต+อนาคต) ถือว่าถูกยกเลิกไปด้วยเมื่อ Routine
+    // ต้นทางถูกลบ ➔ ลบออกจากตาราง Event ก่อน แล้วค่อยลบตัว Routine เอง
+    await deleteRoutineEvents(routineId);
+    await deleteDoc(doc(db, 'users', authUser.uid, 'routines', routineId));
+  };
+
+  const toggleRoutineActive = async (routineId: string) => {
+    if (!authUser) return;
+    const target = routines.find(r => r.id === routineId);
+    if (!target) return;
+    const nextActive = !target.active;
+
+    await setDoc(
+      doc(db, 'users', authUser.uid, 'routines', routineId),
+      { active: nextActive, updatedAt: new Date().toISOString() },
+      { merge: true }
+    );
+
+    const todayStr = getLocalTodayStr();
+    if (!nextActive) {
+      // 🔕 Disable/Pause: ลบเฉพาะ Event ตั้งแต่วันนี้เป็นต้นไป ส่วน Event ในอดีตที่เคยทำไปแล้ว
+      // (รวมถึงที่ completed แล้ว) ยังคงเก็บไว้เป็นประวัติเหมือนเดิม
+      await deleteRoutineEvents(routineId, todayStr);
+    } else {
+      // 🔔 Re-enable: คำนวณ Event ใหม่ตั้งแต่วันนี้ ➔ วันสุดท้ายของเดือนปัจจุบัน แล้ว Append กลับเข้าไป
+      // (ใช้ object ของ routine ที่ active: true ตรง ๆ แทนการพึ่ง state `routines` ที่อาจยังไม่ sync
+      // กลับมาจาก Firestore ทันทีหลัง setDoc ด้านบน)
+      const { end: monthEndStr } = getMonthRange(new Date());
+      const reactivatedRoutine: Routine = { ...target, active: true };
+      const newEvents = generateEventsForRange([reactivatedRoutine], todayStr, monthEndStr);
+      await appendGeneratedEvents(newEvents);
+    }
+  };
+
+  // 🗂️ "ตั้งต่อ" — ผู้ใช้เลือกต่ออายุ Routine ที่หมดอายุแล้วจาก Pop-up แจ้งเตือน
+  // ถ้าไม่ระบุ newEndDate จะตั้งเป็น 'indefinite' (ทำต่อไปเรื่อย ๆ ไม่มีวันสิ้นสุด)
+  // ถ้าระบุ newEndDate จะคงเป็น 'date_range' แต่ขยับ endDate ออกไปแทน
+  const renewRoutine = async (routineId: string, newEndDate?: string) => {
+    if (!authUser) return;
+    const target = routines.find(r => r.id === routineId);
+    if (!target) return;
+
+    const updates: Partial<Routine> = newEndDate
+      ? { durationMode: 'date_range', startDate: target.startDate || getLocalTodayStr(), endDate: newEndDate }
+      : { durationMode: 'indefinite', startDate: undefined, endDate: undefined };
+
+    await setDoc(
+      doc(db, 'users', authUser.uid, 'routines', routineId),
+      {
+        ...updates,
+        active: true,
+        status: 'active',
+        expiredAcknowledged: false,
+        updatedAt: new Date().toISOString()
+      },
+      { merge: true }
+    );
+  };
+
+  // 🗂️ ผู้ใช้กด "รับทราบ" การแจ้งเตือนหมดอายุ (ไม่ลบ ไม่ต่ออายุ แค่ปิด Pop-up)
+  // Routine จะยังอยู่ในหมวด Archive ต่อไป แต่จะไม่เด้ง Pop-up ซ้ำอีก
+  const acknowledgeRoutineExpiry = async (routineId: string) => {
+    if (!authUser) return;
+    await setDoc(
+      doc(db, 'users', authUser.uid, 'routines', routineId),
+      { expiredAcknowledged: true, updatedAt: new Date().toISOString() },
+      { merge: true }
+    );
+  };
+
   const addJournal = async (entryData: Partial<JournalEntry>) => {
     if (!authUser) return;
     const journalId = `journal_${Date.now()}`;
@@ -351,6 +557,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deleteGoal,
         toggleGoalComplete,
         togglePinGoal,
+        addRoutine,
+        updateRoutine,
+        deleteRoutine,
+        toggleRoutineActive,
+        ensureMonthEvents,
+        renewRoutine,
+        acknowledgeRoutineExpiry,
         addJournal,
         deleteJournal
       }}

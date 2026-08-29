@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/layout/Header';
 import { BottomNav } from './components/layout/BottomNav';
 import { LoginView } from './components/auth/LoginView';
+import { RoutineExpiryAlert } from './components/routines/RoutineExpiryAlert';
 
 const CalendarView = lazy(() =>
   import('./components/calendar/CalendarView').then(m => ({ default: m.CalendarView }))
@@ -42,6 +43,7 @@ const MainContent: React.FC = () => {
     isSyncing,
     tasks,
     goals,
+    routines,
     journals,
     activeTab,
     setActiveTab,
@@ -57,11 +59,31 @@ const MainContent: React.FC = () => {
     deleteGoal,
     toggleGoalComplete,
     togglePinGoal,
+    addRoutine,
+    updateRoutine,
+    deleteRoutine,
+    toggleRoutineActive,
+    ensureMonthEvents,
+    renewRoutine,
+    acknowledgeRoutineExpiry,
     addJournal,
-    deleteJournal
+    deleteJournal,
+    logout
   } = useApp();
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // 🚪 ออกจากระบบจริง (Firebase signOut) — authUser จะกลายเป็น null หลังจากนี้ ทำให้
+  // MainContent เด้งกลับไปแสดง <LoginView /> โดยอัตโนมัติ (ดูเงื่อนไข `if (!authUser)` ด้านล่าง)
+  // และผู้ใช้จะไม่สามารถเข้าหน้าอื่นได้จนกว่าจะเข้าสู่ระบบใหม่
+  const handleLogout = async () => {
+    const confirmMsg = user.language === 'th'
+      ? 'ยืนยันออกจากระบบ?'
+      : 'Are you sure you want to log out?';
+    if (window.confirm(confirmMsg)) {
+      await logout();
+    }
+  };
 
   // ⚡ Dynamic Theme Management (Dark Mode & Theme Accent Switcher)
   useEffect(() => {
@@ -89,10 +111,11 @@ const MainContent: React.FC = () => {
       yellow: '#FFE66D',
       coral: '#FF9F9F',
       sky: '#9DD9D2',
-      mint: '#C1E1C1'
+      mint: '#C1E1C1',
+      blue: '#A8D8FF'
     };
 
-    const currentAccent = accentHexMap[user.themeAccent] || '#FFE66D';
+    const currentAccent = accentHexMap[user.themeAccent] || '#A8D8FF';
     root.style.setProperty('--accent-color', currentAccent);
   }, [user?.darkMode, user?.themeAccent]);
 
@@ -105,6 +128,15 @@ const MainContent: React.FC = () => {
   return (
     /* 👈 ถอด ${user.darkMode ? 'dark-theme' : ''} ออกเพื่อไม่ให้สไตล์ตีกัน ให้ควบคุมผ่าน class "dark" บน <html> จุดเดียว */
     <div className="min-h-screen bg-[#FCF9F8] dark:bg-gray-900 text-[#1A1A1A] dark:text-gray-100 flex flex-col font-['Manrope'] selection:bg-accent selection:text-black transition-colors duration-200">
+      {/* 🗂️ Lifecycle & Categories — Pop-up แจ้งเตือน Routine ที่หมดอายุ */}
+      <RoutineExpiryAlert
+        routines={routines}
+        language={user.language}
+        onDeleteRoutine={deleteRoutine}
+        onRenewRoutine={(id) => renewRoutine(id)}
+        onAcknowledge={acknowledgeRoutineExpiry}
+      />
+
       <Header
         user={user}
         activeTab={activeTab}
@@ -121,11 +153,13 @@ const MainContent: React.FC = () => {
               user={user}
               tasks={tasks}
               goals={goals}
+              routines={routines}
               onToggleTask={toggleTask}
               onAddTask={addTask}
               onUpdateTask={updateTask}
               onDeleteTask={deleteTask}
               onRescheduleBatch={rescheduleBatch}
+              onEnsureMonthEvents={ensureMonthEvents}
             />
           )}
 
@@ -136,6 +170,7 @@ const MainContent: React.FC = () => {
               goals={goals}
               onToggleTask={toggleTask}
               onAddTask={addTask}
+              onUpdateTask={updateTask}
               onDeleteTask={deleteTask}
               onNavigateToGoals={() => setActiveTab('goals_flow')}
             />
@@ -166,8 +201,16 @@ const MainContent: React.FC = () => {
           {activeTab === 'settings' && (
             <SettingsView
               user={user}
+              goals={goals}
+              routines={routines}
               onUpdateUser={updateUser}
               onNavigateToGoals={() => setActiveTab('goals_flow')}
+              onAddRoutine={addRoutine}
+              onUpdateRoutine={updateRoutine}
+              onDeleteRoutine={deleteRoutine}
+              onToggleRoutineActive={toggleRoutineActive}
+              onRenewRoutine={(id) => renewRoutine(id)}
+              onLogout={handleLogout}
             />
           )}
 
@@ -194,12 +237,7 @@ const MainContent: React.FC = () => {
                   setIsProfileOpen(false);
                 }}
                 onBack={() => setIsProfileOpen(false)}
-                onLogout={() => {
-                  if (confirm('Reset local state to fresh demo seed?')) {
-                    localStorage.clear();
-                    window.location.reload();
-                  }
-                }}
+                onLogout={handleLogout}
               />
             </div>
           )}

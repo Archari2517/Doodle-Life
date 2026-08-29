@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Task, UserProfile, Goal } from '../../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Task, UserProfile, Goal, Routine } from '../../types';
 import { useTranslation } from '../../utils/translations';
 import { aiRescheduleMissedTasks, RescheduleProposal } from '../../services/geminiService';
 import { 
@@ -16,7 +16,8 @@ import {
   Trash2,
   Layers,
   LayoutGrid,
-  List
+  List,
+  Repeat
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { toLocalDateStr } from '../../utils/date';
@@ -25,22 +26,26 @@ interface CalendarViewProps {
   user: UserProfile;
   tasks: Task[];
   goals: Goal[];
+  routines?: Routine[];
   onToggleTask: (taskId: string) => void;
   onAddTask: (task: Partial<Task>) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onRescheduleBatch: (proposals: RescheduleProposal[]) => void;
+  onEnsureMonthEvents?: (monthDate: Date) => void;
 }
 
 export const CalendarView: React.FC<CalendarViewProps> = ({
   user,
   tasks,
   goals,
+  routines = [],
   onToggleTask,
   onAddTask,
   onUpdateTask,
   onDeleteTask,
-  onRescheduleBatch
+  onRescheduleBatch,
+  onEnsureMonthEvents
 }) => {
   const t = useTranslation(user.language);
 
@@ -65,14 +70,79 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   
   const monthInputRef = useRef<HTMLInputElement>(null);
 
+  // ----------------------------------------------------
+  // 🔁 Routine Generation Engine trigger
+  // ----------------------------------------------------
+  // เมื่อเปลี่ยนเดือน (viewMonthDate เปลี่ยน) หรือลิสต์ Routine เปลี่ยน
+  // (เช่นเพิ่ม Routine ใหม่ที่มีผลกับเดือนที่กำลังดูอยู่) ให้สั่งคำนวณ/เติม Event
+  // ของ Routine ทั้งหมดลงในเดือนที่กำลังแสดงผลอยู่โดยอัตโนมัติ
+  useEffect(() => {
+    onEnsureMonthEvents?.(viewMonthDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMonthDate, routines]);
+
   // New Task Form State
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('STUDY');
   const [newTime, setNewTime] = useState('09:00');
+  const [newEndTime, setNewEndTime] = useState('09:30');
   const [durationHours, setDurationHours] = useState(0);
   const [durationMins, setDurationMins] = useState(30);
   const [newQuadrant, setNewQuadrant] = useState<'now' | 'plan' | 'quick' | 'chill'>('now');
   const [newGoalId, setNewGoalId] = useState<string>('');
+  // 🕒 ไม่ระบุเวลา (Anytime / Flex Task) — true = ไม่บังคับใส่ Start/End Time ตอนสร้างงาน
+  // (เหมือน Flex Habit ของ Routine ที่ dueTime ว่าง '' และ endTime เป็น undefined)
+  const [newIsFlexTime, setNewIsFlexTime] = useState(false);
+
+  // ----------------------------------------------------
+  // ⏱️ Start Time / End Time / Duration — สามค่านี้ผูกกันไว้:
+  // เปลี่ยนเวลาเริ่ม หรือ Duration → คำนวณเวลาสิ้นสุดใหม่
+  // เปลี่ยนเวลาสิ้นสุด → คำนวณ Duration ใหม่
+  // ----------------------------------------------------
+  const timeToMinutes = (time: string) => {
+    const [h, m] = time.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+
+  const minutesToTime = (totalMinutes: number) => {
+    const wrapped = ((totalMinutes % 1440) + 1440) % 1440;
+    const h = Math.floor(wrapped / 60);
+    const m = wrapped % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  };
+
+  const handleStartTimeChange = (value: string) => {
+    setNewTime(value);
+    const durationMinutes = Number(durationHours) * 60 + Number(durationMins);
+    setNewEndTime(minutesToTime(timeToMinutes(value) + durationMinutes));
+  };
+
+  const handleEndTimeChange = (value: string) => {
+    setNewEndTime(value);
+    let diff = timeToMinutes(value) - timeToMinutes(newTime);
+    if (diff <= 0) diff += 1440; // ข้ามเที่ยงคืน ให้ถือว่า Duration เป็นบวกเสมอ
+    setDurationHours(Math.floor(diff / 60));
+    setDurationMins(diff % 60);
+  };
+
+  const handleDurationHoursChange = (hours: number) => {
+    setDurationHours(hours);
+    const totalMinutes = hours * 60 + Number(durationMins);
+    setNewEndTime(minutesToTime(timeToMinutes(newTime) + totalMinutes));
+  };
+
+  const handleDurationMinsChange = (mins: number) => {
+    setDurationMins(mins);
+    const totalMinutes = Number(durationHours) * 60 + mins;
+    setNewEndTime(minutesToTime(timeToMinutes(newTime) + totalMinutes));
+  };
+
+  // เวลาสิ้นสุดของงาน: ใช้ task.endTime ถ้ามี ไม่งั้นคำนวณจาก dueTime + durationMinutes
+  const getTaskEndTime = (task: Task) => {
+    if (task.endTime) return task.endTime;
+    if (!task.dueTime) return '';
+    return minutesToTime(timeToMinutes(task.dueTime) + (task.durationMinutes || 0));
+  };
 
   // ----------------------------------------------------
   // Native Month Picker Handlers
@@ -253,6 +323,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const missedTasks = tasks.filter(t => !t.completed && t.dueDate <= todayStr && (t.dueDate < todayStr || (t.dueTime && t.dueTime < '09:00')));
   const activeTasks = tasks.filter(t => t.dueDate === selectedDate);
 
+  // ----------------------------------------------------
+  // 🗓️ Calendar Integration — แยก "กิจกรรมที่มีเวลา" (ลงตามกล่องเวลา)
+  // ออกจาก "Habit" (ไม่มีเวลา ขึ้นเป็น Checklist/Badge ประจำวัน)
+  // Habit คือ Event ที่ระบบสร้างจาก Routine แบบ flex (ไม่มี dueTime)
+  // ----------------------------------------------------
+  // Habit คือ Task ที่ไม่มี dueTime (ไม่ระบุเวลา) ไม่ว่าจะมาจาก Routine หรือผู้ใช้เพิ่มเอง
+  // (Flex Task ที่เพิ่มเองผ่านฟอร์ม "ไม่ระบุเวลา" จะถูกจัดเข้ากลุ่มนี้เหมือนกัน แสดงเป็น
+  // checklist ให้ติ๊กว่าทำแล้วแทนที่จะโชว์เวลา)
+  const isHabitTask = (task: Task) => !task.dueTime;
+  const habitActiveTasks = activeTasks.filter(isHabitTask);
+  const timedActiveTasks = activeTasks.filter((t) => !isHabitTask(t));
+
   const handleTriggerAiReschedule = async () => {
     if (missedTasks.length === 0) return;
     setIsRescheduling(true);
@@ -278,11 +360,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     e.preventDefault();
     if (!newTitle.trim()) return;
     const totalMinutes = (Number(durationHours) * 60) + Number(durationMins);
-    
+
     onAddTask({
       title: newTitle.trim(),
       category: newCategory,
-      dueTime: newTime,
+      // ไม่ระบุเวลา ➔ dueTime ว่าง '' และไม่มี endTime (เหมือน Flex Habit ที่มาจาก Routine)
+      dueTime: newIsFlexTime ? '' : newTime,
+      endTime: newIsFlexTime ? undefined : newEndTime,
       durationMinutes: totalMinutes > 0 ? totalMinutes : 15,
       dueDate: selectedDate,
       eisenhowerQuadrant: newQuadrant,
@@ -589,6 +673,41 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         </div>
 
+        {/* 🔁 Habit Checklist — กิจกรรมที่เป็น Habit (ไม่มีเวลาตายตัว) ขึ้นเป็น Checklist/Badge
+            แยกจากกิจกรรมที่มีเวลา (จะถูกจัดลงกล่องเวลาด้านล่างแทน) */}
+        {habitActiveTasks.length > 0 && (
+          <div className="bg-white doodle-border doodle-shadow-sm p-3 space-y-2">
+            <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-gray-700 uppercase tracking-wide">
+              <Repeat className="w-3.5 h-3.5" />
+              <span>{user.language === 'th' ? 'กิจวัตรวันนี้ (Habits)' : "Today's Habits"}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {habitActiveTasks.map((task) => (
+                <button
+                  key={task.id}
+                  onClick={() => handleCheckTask(task.id, task.completed)}
+                  className={`flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full doodle-border-sm text-xs font-bold transition-all ${
+                    task.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  <span
+                    className={`w-4 h-4 rounded-full flex items-center justify-center border border-black shrink-0 ${
+                      task.completed ? 'bg-black text-white' : 'bg-white'
+                    }`}
+                  >
+                    {task.completed && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                  </span>
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: task.categoryColor || '#ffe66d' }}
+                  />
+                  {task.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {activeTasks.length === 0 ? (
           <div className="bg-white doodle-border doodle-shadow p-6 text-center space-y-2">
             <span className="text-3xl">☕</span>
@@ -600,10 +719,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <Plus className="w-3.5 h-3.5 text-[var(--accent-color)]" /> {t.addTask}
             </button>
           </div>
+        ) : timedActiveTasks.length === 0 ? (
+          /* มี Habit แล้วแต่ยังไม่มีกิจกรรมที่มีเวลาตายตัว */
+          <div className="bg-white/60 doodle-border-sm p-4 text-center">
+            <p className="text-xs font-bold text-gray-500">
+              {user.language === 'th' ? 'ไม่มีกิจกรรมที่มีเวลานัดหมายวันนี้' : 'No time-blocked tasks today'}
+            </p>
+          </div>
         ) : viewMode === 'list' ? (
           /* 📋 มุมมองรายการปกติ (List View) */
           <div className="space-y-3">
-            {activeTasks.map((task) => (
+            {timedActiveTasks.map((task) => (
               <div
                 key={task.id}
                 draggable
@@ -662,6 +788,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         <span className="text-[10px] font-bold bg-gray-100 px-1.5 py-0.5 rounded border border-gray-400 text-gray-700">
                           {task.eisenhowerQuadrant.toUpperCase()}
                         </span>
+
+                        {task.isRoutineGenerated && (
+                          <span
+                            className="text-[10px] font-extrabold flex items-center gap-0.5 bg-white px-1.5 py-0.5 rounded border border-gray-400 text-gray-700"
+                            title={user.language === 'th' ? 'สร้างจากกิจวัตร' : 'From a routine'}
+                          >
+                            <Repeat className="w-2.5 h-2.5" /> {user.language === 'th' ? 'กิจวัตร' : 'Routine'}
+                          </span>
+                        )}
                       </div>
 
                       <div className="text-right flex items-center gap-1.5">
@@ -703,7 +838,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <div className="relative">
               {timeSlots.map((hour) => {
                 const timeString = `${hour.toString().padStart(2, '0')}:00`;
-                const tasksInSlot = activeTasks.filter(
+                const tasksInSlot = timedActiveTasks.filter(
                   (t) => t.dueTime && t.dueTime.startsWith(`${hour.toString().padStart(2, '0')}:`)
                 );
 
@@ -735,7 +870,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 >
                                   {task.completed && <Check className="w-3 h-3 stroke-[3]" />}
                                 </button>
-                                <span className="truncate">{task.dueTime} - {task.title}</span>
+                                <span className="truncate flex items-center gap-1">
+                                  {task.dueTime}-{getTaskEndTime(task)} - {task.title}
+                                  {task.isRoutineGenerated && (
+                                    <Repeat
+                                      className="w-3 h-3 shrink-0 opacity-70"
+                                      title={user.language === 'th' ? 'สร้างจากกิจวัตร' : 'From a routine'}
+                                    />
+                                  )}
+                                </span>
                               </div>
                               <span className="text-[10px] font-normal shrink-0 ml-1">({task.durationMinutes}m)</span>
                             </div>
@@ -796,51 +939,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block mb-1 text-gray-700">Time</label>
-                  <input
-                    type="time"
-                    value={newTime}
-                    onChange={(e) => setNewTime(e.target.value)}
-                    className="w-full px-2 py-2 doodle-border-sm bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                {/* 🔹 แยกส่วนใส่ระยะเวลา Hours / Mins */}
-                <div>
-                  <label className="block mb-1 text-gray-700">Duration</label>
-                  <div className="flex gap-1 items-center">
-                    <div className="flex-1">
-                      <input
-                        type="number"
-                        min="0"
-                        max="24"
-                        placeholder="0"
-                        value={durationHours}
-                        onChange={(e) => setDurationHours(Math.max(0, Number(e.target.value)))}
-                        className="w-full px-2 py-2 doodle-border-sm bg-white text-center font-bold"
-                      />
-                      <span className="text-[10px] text-gray-500 block text-center mt-0.5">hrs</span>
-                    </div>
-                    <span className="font-bold">:</span>
-                    <div className="flex-1">
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        step="5"
-                        placeholder="30"
-                        value={durationMins}
-                        onChange={(e) => setDurationMins(Math.max(0, Number(e.target.value)))}
-                        className="w-full px-2 py-2 doodle-border-sm bg-white text-center font-bold"
-                      />
-                      <span className="text-[10px] text-gray-500 block text-center mt-0.5">mins</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
                   <label className="block mb-1 text-gray-700">Quadrant</label>
                   <select
                     value={newQuadrant}
@@ -852,6 +950,83 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     <option value="quick">Delegate / Quick</option>
                     <option value="chill">Don't Do / Chill</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 doodle-border-sm bg-gray-50 px-3 py-2">
+                <label htmlFor="new-task-flex-time" className="text-gray-700">
+                  {user.language === 'th' ? 'ไม่ระบุเวลา' : 'No specific time'}
+                </label>
+                <button
+                  type="button"
+                  id="new-task-flex-time"
+                  onClick={() => setNewIsFlexTime((prev) => !prev)}
+                  className={`shrink-0 w-9 h-5 rounded-full doodle-btn transition-colors relative ${
+                    newIsFlexTime ? 'bg-accent' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 w-4 h-4 rounded-full bg-white border border-black transition-transform ${
+                      newIsFlexTime ? 'translate-x-4' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {!newIsFlexTime && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block mb-1 text-gray-700">Start Time</label>
+                    <input
+                      type="time"
+                      value={newTime}
+                      onChange={(e) => handleStartTimeChange(e.target.value)}
+                      className="w-full px-2 py-2 doodle-border-sm bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 text-gray-700">End Time</label>
+                    <input
+                      type="time"
+                      value={newEndTime}
+                      onChange={(e) => handleEndTimeChange(e.target.value)}
+                      className="w-full px-2 py-2 doodle-border-sm bg-white"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                {/* 🔹 แยกส่วนใส่ระยะเวลา Hours / Mins — ผูกกับ Start/End Time ด้านบน */}
+                <label className="block mb-1 text-gray-700">Duration</label>
+                <div className="flex gap-1 items-center max-w-[calc(50%-4px)]">
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="24"
+                      placeholder="0"
+                      value={durationHours}
+                      onChange={(e) => handleDurationHoursChange(Math.max(0, Number(e.target.value)))}
+                      className="w-full px-2 py-2 doodle-border-sm bg-white text-center font-bold"
+                    />
+                    <span className="text-[10px] text-gray-500 block text-center mt-0.5">hrs</span>
+                  </div>
+                  <span className="font-bold">:</span>
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      step="5"
+                      placeholder="30"
+                      value={durationMins}
+                      onChange={(e) => handleDurationMinsChange(Math.max(0, Number(e.target.value)))}
+                      className="w-full px-2 py-2 doodle-border-sm bg-white text-center font-bold"
+                    />
+                    <span className="text-[10px] text-gray-500 block text-center mt-0.5">mins</span>
+                  </div>
                 </div>
               </div>
 
