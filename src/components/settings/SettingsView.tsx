@@ -24,7 +24,7 @@ import {
 import confetti from 'canvas-confetti';
 
 // เลขเวอร์ชันของแอป — แก้ตรงนี้ทุกครั้งที่ปล่อยอัปเดตใหม่
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
 
 interface SettingsViewProps {
   user: UserProfile;
