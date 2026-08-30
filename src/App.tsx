@@ -69,6 +69,7 @@ const MainContent: React.FC = () => {
     addJournal,
     deleteJournal,
     logout,
+    deleteAccount,
     upgradeGuestGoogle,
     upgradeGuestEmail
   } = useApp();
@@ -84,6 +85,30 @@ const MainContent: React.FC = () => {
       : 'Are you sure you want to log out?';
     if (window.confirm(confirmMsg)) {
       await logout();
+    }
+  };
+
+  // 🗑️ ลบบัญชีผู้ใช้ทิ้งถาวร (SettingsView เป็นคนแสดง popup ยืนยันก่อนเรียกฟังก์ชันนี้แล้ว)
+  // Firebase กำหนดว่าการลบบัญชีเป็น "sensitive operation" — ถ้า session login ไว้นานเกินไป
+  // จะโดน error 'auth/requires-recent-login' ต้องให้ผู้ใช้ออกจากระบบแล้วเข้าใหม่ก่อนลองอีกครั้ง
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccount();
+    } catch (err: any) {
+      if (err?.code === 'auth/requires-recent-login') {
+        alert(
+          user.language === 'th'
+            ? 'เพื่อความปลอดภัย กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้ง ก่อนลบบัญชี'
+            : 'For security, please log out and log back in before deleting your account.'
+        );
+      } else {
+        console.error('Delete account failed:', err);
+        alert(
+          user.language === 'th'
+            ? 'ลบบัญชีไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+            : 'Failed to delete account. Please try again.'
+        );
+      }
     }
   };
 
@@ -213,6 +238,7 @@ const MainContent: React.FC = () => {
               onToggleRoutineActive={toggleRoutineActive}
               onRenewRoutine={(id) => renewRoutine(id)}
               onLogout={handleLogout}
+              onDeleteAccount={handleDeleteAccount}
             />
           )}
 

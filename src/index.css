@@ -109,6 +109,28 @@
   box-shadow: 4px 4px 0px #1A1A1A;
 }
 
+/* 🕒 Time Input Fix — บังคับขนาดตัวอักษร/ความสูงให้เท่ากันทุกอุปกรณ์
+   ปัญหาเดิม: <input type="time"> ใช้ native widget ของแต่ละเบราว์เซอร์/OS ซึ่งมีขนาด
+   ไม่เท่ากัน (iOS Safari, Android Chrome, Firefox desktop ฯลฯ) และถ้า font-size ต่ำกว่า
+   16px, iOS Safari จะ auto-zoom เข้าไปทั้งหน้าทันทีที่แตะ input — ทำให้ดูเหมือน
+   "บางเครื่องเล็กไป บางเครื่องใหญ่ไป" ทั้งที่โค้ดเหมือนกันทุกเครื่อง
+   การบังคับ font-size ขั้นต่ำ 16px (เท่ากับ 1rem ที่ค่าเริ่มต้นของเบราว์เซอร์) + ความสูง/
+   padding คงที่ ทำให้ขนาดสม่ำเสมอและกัน auto-zoom บน iOS ไปพร้อมกัน */
+.doodle-time-input {
+  font-size: 16px;
+  line-height: 1.3;
+  height: 44px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Safari/iOS จัดข้อความในตัว time picker เป็นกลางโดย default ทำให้ดูไม่เข้าคู่กับ input อื่น */
+.doodle-time-input::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 /* Dynamic Card Override for Dark Mode */
 .dark .bg-white {
   background-color: var(--card-bg) !important;

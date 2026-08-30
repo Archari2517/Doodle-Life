@@ -20,12 +20,13 @@ import {
   RotateCcw,
   Archive,
   X,
-  Info
+  Info,
+  AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 // เลขเวอร์ชันของแอป — แก้ตรงนี้ทุกครั้งที่ปล่อยอัปเดตใหม่
-const APP_VERSION = '0.2.0';
+const APP_VERSION = '0.3.0';
 
 interface SettingsViewProps {
   user: UserProfile;
@@ -42,6 +43,8 @@ interface SettingsViewProps {
   onToggleRoutineActive?: (routineId: string) => void;
   onRenewRoutine?: (routineId: string) => void;
   onLogout?: () => void;
+  // 🗑️ เรียกเมื่อผู้ใช้ยืนยันลบบัญชีตัวเองแล้ว (parent เป็นคนจัดการลบข้อมูล/เรียก API จริง)
+  onDeleteAccount?: () => void;
 }
 
 // 🔹 ตัวเลือกวันในสัปดาห์ (แสดงย่อภาษาไทย เก็บค่าจริงเป็นภาษาอังกฤษ)
@@ -78,7 +81,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onDeleteRoutine,
   onToggleRoutineActive,
   onRenewRoutine,
-  onLogout
+  onLogout,
+  onDeleteAccount
 }) => {
   const t = useTranslation(user.language);
 
@@ -92,6 +96,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [updateNotes, setUpdateNotes] = useState<string>('');
   const [isLoadingUpdateNotes, setIsLoadingUpdateNotes] = useState(false);
   const [updateNotesError, setUpdateNotesError] = useState(false);
+
+  // --- Delete Account Confirmation Popup ---
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
+
+  const handleConfirmDeleteAccount = () => {
+    onDeleteAccount?.();
+    setShowDeleteAccountConfirm(false);
+  };
 
   const handleOpenUpdateModal = async () => {
     setShowUpdateModal(true);
@@ -700,6 +712,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <LogOut className="w-4 h-4" /> {t.logout}
       </button>
 
+      {/* Delete Account Button */}
+      <button
+        onClick={() => setShowDeleteAccountConfirm(true)}
+        className="w-full bg-[#93000A] dark:bg-red-900 text-white doodle-border border-[#93000A] dark:border-red-400 p-4 font-black text-sm flex items-center justify-center gap-2 doodle-btn doodle-shadow hover:bg-[#7a0008] dark:hover:bg-red-800 transition-colors"
+      >
+        <AlertTriangle className="w-4 h-4" />
+        {user.language === 'th' ? 'ลบบัญชีผู้ใช้' : 'Delete Account'}
+      </button>
+
       {/* ✏️ Routine Create/Edit Modal */}
       {isRoutineModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -762,8 +783,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
 
                 {routineScheduleType === 'fixed' ? (
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="flex-1 min-w-[132px]">
                       <label className="block mb-1 text-gray-700">
                         {user.language === 'th' ? 'เริ่ม' : 'Start'}
                       </label>
@@ -771,10 +792,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         type="time"
                         value={routineStartTime}
                         onChange={(e) => setRoutineStartTime(e.target.value)}
-                        className="w-full px-2 py-2 doodle-border-sm bg-white"
+                        className="doodle-time-input doodle-border-sm bg-white"
                       />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-[132px]">
                       <label className="block mb-1 text-gray-700">
                         {user.language === 'th' ? 'สิ้นสุด' : 'End'}
                       </label>
@@ -782,7 +803,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         type="time"
                         value={routineEndTime}
                         onChange={(e) => setRoutineEndTime(e.target.value)}
-                        className="w-full px-2 py-2 doodle-border-sm bg-white"
+                        className="doodle-time-input doodle-border-sm bg-white"
                       />
                     </div>
                   </div>
@@ -963,6 +984,43 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             >
               {user.language === 'th' ? 'ปิด' : 'Close'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ⚠️ Delete Account Confirmation Modal */}
+      {showDeleteAccountConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1e293b] doodle-border doodle-shadow-lg max-w-sm w-full p-5 space-y-4">
+            <div className="flex items-center gap-2 border-b-2 border-black dark:border-slate-700 pb-2">
+              <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+              <h3 className="font-extrabold text-lg font-['Bricolage_Grotesque'] text-gray-900 dark:text-gray-100">
+                {user.language === 'th' ? 'ลบบัญชีผู้ใช้?' : 'Delete account?'}
+              </h3>
+            </div>
+
+            <p className="text-xs font-bold text-gray-600 dark:text-gray-300 leading-relaxed">
+              {user.language === 'th'
+                ? 'การลบบัญชีจะลบงาน เป้าหมาย และข้อมูลทั้งหมดของคุณอย่างถาวร ไม่สามารถกู้คืนได้ ต้องการดำเนินการต่อหรือไม่?'
+                : 'Deleting your account will permanently remove all your tasks, goals, and data. This action cannot be undone. Are you sure you want to continue?'}
+            </p>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteAccountConfirm(false)}
+                className="flex-1 py-2.5 bg-gray-100 dark:bg-[#0f172a] text-gray-900 dark:text-gray-100 doodle-border-sm font-bold doodle-btn"
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteAccount}
+                className="flex-1 py-2.5 bg-[#93000A] text-white doodle-border-sm font-black doodle-btn"
+              >
+                {user.language === 'th' ? 'ลบบัญชี' : 'Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}

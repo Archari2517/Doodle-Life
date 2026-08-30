@@ -46,7 +46,7 @@ export const translations = {
     doneCount: 'Done',
 
     // AI Chat Tab
-    aiChatTitle: 'Doodle AI Assistant',
+    aiChatTitle: 'Planda AI Assistant',
     aiContextBadge: 'Peak Energy Window',
     typeMessage: 'Ask anything or pick a quick chip...',
     send: 'Send',
@@ -172,7 +172,7 @@ export const translations = {
     doneCount: 'เสร็จแล้ว',
 
     // AI Chat Tab
-    aiChatTitle: 'Doodle AI',
+    aiChatTitle: 'Planda AI',
     aiContextBadge: 'ช่วงเวลาพลังงานพีค',
     typeMessage: 'พิมพ์ข้อความ หรือเลือกคำสั่งด่วน...',
     send: 'ส่ง',

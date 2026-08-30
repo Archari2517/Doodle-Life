@@ -1,8 +1,9 @@
 import Dexie, { type Table } from 'dexie';
 import { UserProfile, Task, Goal, Routine, JournalEntry } from '../types';
 import { toLocalDateStr } from '../utils/date';
+import defaultAvatarImg from '../assets/default-avatar.jpg';
 
-export class DoodleDatabase extends Dexie {
+export class PlandaDatabase extends Dexie {
   users!: Table<UserProfile, string>;
   tasks!: Table<Task, string>;
   goals!: Table<Goal, string>;
@@ -10,7 +11,7 @@ export class DoodleDatabase extends Dexie {
   journal_entries!: Table<JournalEntry, string>;
 
   constructor() {
-    super('DoodleLifeDatabase');
+    super('PlandaDatabase');
     this.version(1).stores({
       users: 'id, email',
       tasks: 'id, dueDate, completed, goalId, eisenhowerQuadrant',
@@ -21,14 +22,14 @@ export class DoodleDatabase extends Dexie {
   }
 }
 
-export const db = new DoodleDatabase();
+export const db = new PlandaDatabase();
 
 // Initial Default User Profile
 export const DEFAULT_USER: UserProfile = {
   id: 'user_default',
   name: 'Sarah Jenkins',
   email: 'sarah.j@student.edu',
-  avatarUrl: 'https://cdn.pfps.gg/pfps/5129-default-blue.png',
+  avatarUrl: defaultAvatarImg,
   energyType: 'morning_owl',
   peakHours: '08:00 - 12:00',
   themeAccent: 'blue',

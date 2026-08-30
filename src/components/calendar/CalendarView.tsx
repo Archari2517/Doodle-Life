@@ -977,24 +977,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               </div>
 
               {!newIsFlexTime && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex-1 min-w-[132px]">
                     <label className="block mb-1 text-gray-700">Start Time</label>
                     <input
                       type="time"
                       value={newTime}
                       onChange={(e) => handleStartTimeChange(e.target.value)}
-                      className="w-full px-2 py-2 doodle-border-sm bg-white"
+                      className="doodle-time-input doodle-border-sm bg-white"
                     />
                   </div>
 
-                  <div>
+                  <div className="flex-1 min-w-[132px]">
                     <label className="block mb-1 text-gray-700">End Time</label>
                     <input
                       type="time"
                       value={newEndTime}
                       onChange={(e) => handleEndTimeChange(e.target.value)}
-                      className="w-full px-2 py-2 doodle-border-sm bg-white"
+                      className="doodle-time-input doodle-border-sm bg-white"
                     />
                   </div>
                 </div>

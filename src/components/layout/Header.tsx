@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'goals_flow':
         return t.settingsTitle;
       default:
-        return 'Doodle Life';
+        return 'Planda';
     }
   };
 

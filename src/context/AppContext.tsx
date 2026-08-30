@@ -9,12 +9,14 @@ import {
   registerWithEmail, 
   logoutUser,
   upgradeGuestWithGoogle,
-  upgradeGuestWithEmail
+  upgradeGuestWithEmail,
+  saveUserProfileToCloud
 } from '../lib/firebase';
-import { onAuthStateChanged, getRedirectResult, User as FirebaseUser } from 'firebase/auth';
-import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { onAuthStateChanged, getRedirectResult, deleteUser, User as FirebaseUser } from 'firebase/auth';
+import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { getLocalTodayStr } from '../utils/date';
 import { generateEventsForRange, getMonthRange, findNewlyExpiredRoutines } from '../utils/routineEngine';
+import defaultAvatarImg from '../assets/default-avatar.jpg';
 
 interface RescheduleProposal {
   taskId: string;
@@ -37,8 +39,9 @@ interface AppContextType {
   login: () => Promise<void>;
   loginAsGuestUser: () => Promise<void>;
   loginEmail: (email: string, pass: string) => Promise<void>;
-  registerEmail: (email: string, pass: string) => Promise<void>;
+  registerEmail: (email: string, pass: string, avatarUrl?: string) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   upgradeGuestGoogle: () => Promise<void>;
   upgradeGuestEmail: (email: string, pass: string) => Promise<void>;
   updateUser: (updated: Partial<UserProfile>) => Promise<void>;
@@ -64,9 +67,12 @@ interface AppContextType {
   clearAuthError: () => void;
 }
 
+// รูปโปรไฟล์เริ่มต้น — ใช้เมื่อผู้ใช้ไม่ได้เลือกรูปตอนสมัครสมาชิก
+export const DEFAULT_AVATAR_URL = defaultAvatarImg;
+
 const DEFAULT_USER: UserProfile = {
-  name: 'Doodler',
-  avatarUrl: 'https://cdn.pfps.gg/pfps/5129-default-blue.png',
+  name: 'Planda User',
+  avatarUrl: DEFAULT_AVATAR_URL,
   language: 'th',
   energyType: 'morning_owl',
   peakHours: '08:00 - 12:00',
@@ -119,7 +125,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setAuthError(message);
     });
 
+    // ⚠️ onAuthStateChanged ไม่ใช่ React effect — Firebase ไม่เรียก return value
+    // ของ callback ให้อัตโนมัติเหมือน useEffect cleanup ดังนั้นต้องเก็บ unsubscribe
+    // ของ onSnapshot ทั้งหมดไว้เอง แล้วเรียกมันด้วยมือทุกครั้งที่ auth state เปลี่ยน
+    // (รวมถึงตอน logout) — ไม่งั้น listener ของ session เก่าจะยังทำงานค้างอยู่
+    // พอ signOut() ทำให้ credential หมดอายุ listener เก่าที่ยังไม่ถูก unsub จะโดน
+    // security rules ปฏิเสธและโยน permission-denied ออกมาซ้ำ ๆ (นี่คือสาเหตุของ error ในล็อก)
+    let dataUnsubscribers: Array<() => void> = [];
+    const clearDataListeners = () => {
+      dataUnsubscribers.forEach((fn) => fn());
+      dataUnsubscribers = [];
+    };
+
     const unsubAuth = onAuthStateChanged(auth, (fbUser) => {
+      // ต้อง unsub listener ของ session ก่อนหน้าก่อนเสมอ ไม่ว่าจะ login ใหม่หรือ logout
+      clearDataListeners();
+
       setAuthUser(fbUser);
       if (fbUser) {
         setAuthError(null);
@@ -136,19 +157,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             };
             setDoc(userDocRef, initialProfile);
           }
-        });
+        }, (err) => console.error('Profile sync error:', err));
 
         const unsubTasks = onSnapshot(collection(db, 'users', fbUser.uid, 'tasks'), (snap) => {
           const items: Task[] = [];
           snap.forEach((d) => items.push(d.data() as Task));
           setTasks(items);
-        });
+        }, (err) => console.error('Tasks sync error:', err));
 
         const unsubGoals = onSnapshot(collection(db, 'users', fbUser.uid, 'goals'), (snap) => {
           const items: Goal[] = [];
           snap.forEach((d) => items.push(d.data() as Goal));
           setGoals(items);
-        });
+        }, (err) => console.error('Goals sync error:', err));
 
         const unsubRoutines = onSnapshot(collection(db, 'users', fbUser.uid, 'routines'), (snap) => {
           const items: Routine[] = [];
@@ -175,22 +196,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             });
             expiryBatch.commit().catch((err) => console.error('Failed to expire routines:', err));
           }
-        });
+        }, (err) => console.error('Routines sync error:', err));
 
         const unsubJournals = onSnapshot(collection(db, 'users', fbUser.uid, 'journals'), (snap) => {
           const items: JournalEntry[] = [];
           snap.forEach((d) => items.push(d.data() as JournalEntry));
           setJournals(items);
           setIsSyncing(false);
-        });
+        }, (err) => console.error('Journals sync error:', err));
 
-        return () => {
-          unsubProfile();
-          unsubTasks();
-          unsubGoals();
-          unsubRoutines();
-          unsubJournals();
-        };
+        dataUnsubscribers = [unsubProfile, unsubTasks, unsubGoals, unsubRoutines, unsubJournals];
       } else {
         setTasks([]);
         setGoals([]);
@@ -203,6 +218,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      clearDataListeners();
       unsubAuth();
     };
   }, []);
@@ -211,7 +227,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const login = async () => { await loginWithGoogle(); };
   const loginAsGuestUser = async () => { await loginAsGuest(); };
   const loginEmail = async (email: string, pass: string) => { await loginWithEmail(email, pass); };
-  const registerEmail = async (email: string, pass: string) => { await registerWithEmail(email, pass); };
+  const registerEmail = async (email: string, pass: string, avatarUrl?: string) => {
+    const cred = await registerWithEmail(email, pass);
+    // ถ้าผู้ใช้เลือกรูปโปรไฟล์ตอนสมัคร ให้บันทึกทับค่าเริ่มต้นทันที
+    // ใช้ merge:true + spread ค่า DEFAULT_USER ทั้งหมด เพื่อกันแข่งกัน (race condition)
+    // กับ onSnapshot ด้านบนที่จะสร้างโปรไฟล์เริ่มต้นให้เช่นกันหากยังไม่มีเอกสาร —
+    // ไม่ว่าฝั่งไหนจะเขียนก่อน ผลลัพธ์สุดท้ายจะถูกต้องเสมอ (มีครบทุกฟิลด์ + avatarUrl ที่เลือก)
+    if (avatarUrl) {
+      const profile = {
+        ...DEFAULT_USER,
+        name: email.split('@')[0] || 'User',
+        avatarUrl
+      } as UserProfile;
+      await saveUserProfileToCloud(cred.user.uid, profile);
+    }
+  };
   const logout = async () => { await logoutUser(); };
   const upgradeGuestGoogle = async () => { await upgradeGuestWithGoogle(); };
   const upgradeGuestEmail = async (email: string, pass: string) => { await upgradeGuestWithEmail(email, pass); };
@@ -560,6 +590,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await deleteDoc(doc(db, 'users', authUser.uid, 'journals', journalId));
   };
 
+  // 🗑️ ลบบัญชีผู้ใช้ทิ้งถาวร
+  // Firestore ไม่ลบ subcollection ให้อัตโนมัติเมื่อลบเอกสารแม่ ต้องไล่ลบเอกสารย่อย
+  // (tasks/goals/routines/journals) เองก่อน แล้วค่อยลบเอกสารโปรไฟล์ผู้ใช้ และสุดท้ายค่อยลบ
+  // ตัวบัญชี Firebase Auth จริง ๆ — ถ้า session เก่าเกินไป Firebase จะโยน
+  // 'auth/requires-recent-login' ให้ผู้ฝั่งเรียก (App.tsx) ดัก error นี้แล้วขอให้ผู้ใช้
+  // ล็อกอินใหม่อีกครั้งก่อนลองลบซ้ำ
+  const deleteAccount = async () => {
+    if (!authUser) return;
+    const uid = authUser.uid;
+
+    const subcollections = ['tasks', 'goals', 'routines', 'journals'];
+    for (const sub of subcollections) {
+      const snap = await getDocs(collection(db, 'users', uid, sub));
+      // Firestore batch write รับสูงสุด 500 operations ต่อ batch แบ่งเป็นชุดละ 450 กันชน
+      for (let i = 0; i < snap.docs.length; i += 450) {
+        const batch = writeBatch(db);
+        snap.docs.slice(i, i + 450).forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+    }
+
+    await deleteDoc(doc(db, 'users', uid));
+    await deleteUser(authUser);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -580,6 +635,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         loginEmail,
         registerEmail,
         logout,
+        deleteAccount,
         upgradeGuestGoogle,
         upgradeGuestEmail,
         updateUser,

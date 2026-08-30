@@ -183,7 +183,7 @@ export async function sendAiChatMessage(
     .join('\n') || '(ยังไม่มีงานในระบบ)';
 
   const systemContext = `
-You are Doodle Life AI Assistant.
+You are Planda AI Assistant.
 
 CURRENT REAL-TIME DATE CALENDAR (STRICT TRUTH):
 ${dateMapList.join('\n')}

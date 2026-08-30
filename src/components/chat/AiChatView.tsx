@@ -3,6 +3,7 @@ import { UserProfile, Goal, Task, ChatMessage } from '../../types';
 import { useTranslation } from '../../utils/translations';
 import { sendAiChatMessage } from '../../services/geminiService';
 import { Send, Sparkles, Calendar, Pencil, Trash2 } from 'lucide-react';
+import aiIconImg from '../../assets/ai-icon.jpg';
 
 interface AiChatViewProps {
   user: UserProfile;
@@ -31,8 +32,8 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
       id: 'welcome',
       sender: 'ai',
       text: user.language === 'th'
-        ? `สวัสดี ${user.name}! เราคือ Doodle AI ผู้ช่วยส่วนตัวของคุณ\nเชื่อมโยงช่วงเวลาพลังงานพีค (${user.peakHours}) และเป้าหมาย ${goals.length} รายการของคุณแล้ว พร้อมช่วยวางแผนหรือให้คำแนะนำได้ทันที!`
-        : `Hey ${user.name}! 🌿 I'm your Doodle AI Coach.\nI've loaded your ${user.energyType.replace('_', ' ')} peak energy schedule (${user.peakHours}) and ${goals.length} active goals. What would you like to tackle today?`,
+        ? `สวัสดี ${user.name}! เราคือ Planda AI ผู้ช่วยส่วนตัวของคุณ\nเชื่อมโยงช่วงเวลาพลังงานพีค (${user.peakHours}) และเป้าหมาย ${goals.length} รายการของคุณแล้ว พร้อมช่วยวางแผนหรือให้คำแนะนำได้ทันที!`
+        : `Hey ${user.name}! 🌿 I'm your Planda AI Coach.\nI've loaded your ${user.energyType.replace('_', ' ')} peak energy schedule (${user.peakHours}) and ${goals.length} active goals. What would you like to tackle today?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -219,8 +220,8 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
           >
             <div className="flex items-end gap-1.5 max-w-[88%]">
               {msg.sender === 'ai' && (
-                <div className="w-7 h-7 rounded-full bg-accent doodle-border-sm flex items-center justify-center text-xs font-black shrink-0 mb-1">
-                  🤖
+                <div className="w-7 h-7 rounded-full bg-accent doodle-border-sm flex items-center justify-center text-xs font-black shrink-0 mb-1 overflow-hidden">
+                  <img src={aiIconImg} alt="Planda AI" className="w-full h-full object-cover" />
                 </div>
               )}
 
@@ -264,8 +265,8 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
 
         {isLoading && (
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-accent doodle-border-sm flex items-center justify-center text-xs font-black">
-              🤖
+            <div className="w-7 h-7 rounded-full bg-accent doodle-border-sm flex items-center justify-center text-xs font-black overflow-hidden">
+              <img src={aiIconImg} alt="Planda AI" className="w-full h-full object-cover" />
             </div>
             <div className="bg-white doodle-border-sm p-3 text-xs font-bold text-gray-700 flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />

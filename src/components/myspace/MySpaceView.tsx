@@ -13,6 +13,7 @@ import {
   Trash2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import aiIconImg from '../../assets/ai-icon.jpg';
 
 interface MySpaceViewProps {
   user: UserProfile;
@@ -515,8 +516,8 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
           </div>
 
           <div className="bg-white p-5 doodle-border doodle-shadow relative pt-6">
-            <div className="absolute -left-3 -top-3 w-10 h-10 bg-accent doodle-border-sm rounded-full flex items-center justify-center text-lg doodle-shadow-sm">
-              🤖
+            <div className="absolute -left-3 -top-3 w-10 h-10 bg-accent doodle-border-sm rounded-full flex items-center justify-center text-lg doodle-shadow-sm overflow-hidden">
+              <img src={aiIconImg} alt="Planda AI" className="w-full h-full object-cover" />
             </div>
             <p className="text-xs md:text-sm font-semibold text-gray-800 italic leading-relaxed pl-4">
               "{aiInsightText}"
@@ -593,8 +594,8 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
             <div className="flex-1 bg-[#F8DEF8] doodle-border doodle-shadow-sm p-3.5 relative rounded-2xl rounded-bl-none text-xs font-semibold leading-relaxed text-[#1A1A1A]">
               {aiHealingQuote}
             </div>
-            <div className="w-8 h-8 rounded-full bg-accent doodle-border-sm flex items-center justify-center text-sm shrink-0">
-              🤖
+            <div className="w-8 h-8 rounded-full bg-accent doodle-border-sm flex items-center justify-center text-sm shrink-0 overflow-hidden">
+              <img src={aiIconImg} alt="Planda AI" className="w-full h-full object-cover" />
             </div>
           </div>
 

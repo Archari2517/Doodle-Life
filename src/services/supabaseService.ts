@@ -29,7 +29,7 @@ class SupabaseSyncService {
       };
     }
 
-    const lastSync = localStorage.getItem('doodle_last_sync_timestamp');
+    const lastSync = localStorage.getItem('planda_last_sync_timestamp');
     return {
       state: 'synced',
       lastSyncedAt: lastSync || new Date().toISOString(),
@@ -43,7 +43,7 @@ class SupabaseSyncService {
     if (!user.supabaseUrl || !user.supabaseKey) {
       // Local backup simulation
       const timestamp = new Date().toISOString();
-      localStorage.setItem('doodle_last_sync_timestamp', timestamp);
+      localStorage.setItem('planda_last_sync_timestamp', timestamp);
       return { success: true, message: 'Saved to Local IndexedDB storage.' };
     }
 
@@ -72,7 +72,7 @@ class SupabaseSyncService {
       }).catch(err => console.log('Tasks sync skipped:', err));
 
       const now = new Date().toISOString();
-      localStorage.setItem('doodle_last_sync_timestamp', now);
+      localStorage.setItem('planda_last_sync_timestamp', now);
       return { success: true, message: `Successfully synced at ${new Date(now).toLocaleTimeString()}` };
     } catch (e: any) {
       console.warn('Supabase sync warning:', e);

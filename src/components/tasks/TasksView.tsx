@@ -56,6 +56,9 @@ export const TasksView: React.FC<TasksViewProps> = ({
   const [editDurationMins, setEditDurationMins] = useState(30);
   const [editQuadrant, setEditQuadrant] = useState<EisenhowerQuadrant>('now');
   const [editGoalId, setEditGoalId] = useState<string>('');
+  // 🕒 ไม่ระบุเวลา (Anytime / Flex Task) — เหมือนกับตอนเพิ่มงานใหม่ใน CalendarView
+  // (dueTime ว่าง '' และไม่มี endTime)
+  const [editIsFlexTime, setEditIsFlexTime] = useState(false);
 
   // 🔹 แปลงเวลา "HH:mm" <-> จำนวนนาที ใช้ผูก Start/End Time กับ Duration
   const timeToMinutes = (time: string) => {
@@ -81,6 +84,8 @@ export const TasksView: React.FC<TasksViewProps> = ({
     setEditEndTime(task.endTime || minutesToTime(timeToMinutes(start) + duration));
     setEditQuadrant(task.eisenhowerQuadrant);
     setEditGoalId(task.goalId || '');
+    // งานที่ไม่มี dueTime อยู่แล้ว (มาจาก Flex Task หรือ Flex Habit) ให้เปิดโหมด "ไม่ระบุเวลา" ไว้ตั้งแต่แรก
+    setEditIsFlexTime(!task.dueTime);
   };
 
   const closeEditModal = () => {
@@ -123,8 +128,9 @@ export const TasksView: React.FC<TasksViewProps> = ({
     onUpdateTask({
       ...editingTask,
       title: editTitle.trim() || editingTask.title,
-      dueTime: editStartTime,
-      endTime: editEndTime,
+      // ไม่ระบุเวลา ➔ dueTime ว่าง '' และไม่มี endTime (เหมือนตอนเพิ่มงานใหม่)
+      dueTime: editIsFlexTime ? '' : editStartTime,
+      endTime: editIsFlexTime ? undefined : editEndTime,
       durationMinutes: editDurationHours * 60 + editDurationMins,
       eisenhowerQuadrant: editQuadrant,
       goalId: editGoalId || undefined,
@@ -448,27 +454,49 @@ export const TasksView: React.FC<TasksViewProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block mb-1 text-gray-700">Start Time</label>
-                  <input
-                    type="time"
-                    value={editStartTime}
-                    onChange={(e) => handleEditStartTimeChange(e.target.value)}
-                    className="w-full px-2 py-2 doodle-border-sm bg-white"
+              <div className="flex items-center justify-between gap-2 doodle-border-sm bg-gray-50 px-3 py-2">
+                <label htmlFor="edit-task-flex-time" className="text-gray-700">
+                  {user.language === 'th' ? 'ไม่ระบุเวลา' : 'No specific time'}
+                </label>
+                <button
+                  type="button"
+                  id="edit-task-flex-time"
+                  onClick={() => setEditIsFlexTime((prev) => !prev)}
+                  className={`shrink-0 w-9 h-5 rounded-full doodle-btn transition-colors relative ${
+                    editIsFlexTime ? 'bg-accent' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 w-4 h-4 rounded-full bg-white border border-black transition-transform ${
+                      editIsFlexTime ? 'translate-x-4' : 'translate-x-0.5'
+                    }`}
                   />
-                </div>
-
-                <div>
-                  <label className="block mb-1 text-gray-700">End Time</label>
-                  <input
-                    type="time"
-                    value={editEndTime}
-                    onChange={(e) => handleEditEndTimeChange(e.target.value)}
-                    className="w-full px-2 py-2 doodle-border-sm bg-white"
-                  />
-                </div>
+                </button>
               </div>
+
+              {!editIsFlexTime && (
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex-1 min-w-[132px]">
+                    <label className="block mb-1 text-gray-700">Start Time</label>
+                    <input
+                      type="time"
+                      value={editStartTime}
+                      onChange={(e) => handleEditStartTimeChange(e.target.value)}
+                      className="doodle-time-input doodle-border-sm bg-white"
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-[132px]">
+                    <label className="block mb-1 text-gray-700">End Time</label>
+                    <input
+                      type="time"
+                      value={editEndTime}
+                      onChange={(e) => handleEditEndTimeChange(e.target.value)}
+                      className="doodle-time-input doodle-border-sm bg-white"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
