@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { User as FirebaseUser } from 'firebase/auth';
 import { UserProfile, ThemeAccent, Language, EnergyType, Goal, Routine, RoutineScheduleType, RoutineDurationMode, RoutineCategory } from '../../types';
 import { useTranslation } from '../../utils/translations';
 import { backupService } from '../../services/backupService';
@@ -24,12 +25,15 @@ import {
 import confetti from 'canvas-confetti';
 
 // เลขเวอร์ชันของแอป — แก้ตรงนี้ทุกครั้งที่ปล่อยอัปเดตใหม่
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '0.2.0';
 
 interface SettingsViewProps {
   user: UserProfile;
   goals?: Goal[];
   routines?: Routine[];
+  authUser?: FirebaseUser | null;
+  onUpgradeGoogle?: () => Promise<void>;
+  onUpgradeEmail?: (email: string, pass: string) => Promise<void>;
   onUpdateUser: (updated: Partial<UserProfile>) => void;
   onNavigateToGoals: () => void;
   onAddRoutine?: (routine: Partial<Routine>) => void;
@@ -64,6 +68,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   user,
   goals = [],
   routines = [],
+  authUser,
+  onUpgradeGoogle,
+  onUpgradeEmail,
   onUpdateUser,
   onNavigateToGoals,
   onAddRoutine,
@@ -243,15 +250,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   const handleExportBackup = async () => {
-    const json = await backupService.exportDatabaseToJson();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `doodle-life-backup-${getLocalTodayStr()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setSyncMessage('Backup exported to a local JSON file.');
+    try {
+      const json = await backupService.exportDatabaseToJson();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `doodle-life-backup-${getLocalTodayStr()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setSyncMessage('Backup exported from Firebase to a local JSON file.');
+    } catch (err) {
+      console.error('Export failed:', err);
+      alert(user.language === 'th' ? 'ส่งออกข้อมูลไม่สำเร็จ กรุณาลองใหม่' : 'Failed to export backup. Please try again.');
+    }
   };
 
   const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -278,6 +290,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <ProfileView
         user={user}
         goals={goals}
+        authUser={authUser}
+        onUpgradeGoogle={onUpgradeGoogle}
+        onUpgradeEmail={onUpgradeEmail}
         onUpdateProfile={(updatedData) => {
           onUpdateUser(updatedData);
           setIsEditingProfile(false);
@@ -289,8 +304,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   }
 
   // ตัวช่วยแปลงค่า darkMode ให้เป็นประเภท string เพื่อเปรียบเทียบใน UI
-  const currentThemeMode: 'light' | 'dark' | 'system' = 
-    user.darkMode === 'system' ? 'system' : user.darkMode ? 'dark' : 'light';
+  const currentThemeMode: 'light' | 'dark' = user.darkMode ? 'dark' : 'light';
 
   return (
     <div className="pb-28 pt-2 px-4 max-w-md mx-auto space-y-4">
@@ -323,7 +337,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 value={user.energyType}
                 onChange={(e) => {
                   const type = e.target.value as EnergyType;
-                  const peak = type === 'morning_owl' ? '08:00 - 12:00' : type === 'afternoon_lion' ? '13:00 - 17:00' : '19:00 - 23:00';
+                  const peak = type === 'morning_owl' ? '08:00 - 12:00' : type === 'afternoon_lion' ? '13:00 - 17:00' : type === 'night_owl' ? '19:00 - 23:00' : '00:00 - 04:00';
                   onUpdateUser({ energyType: type, peakHours: peak });
                 }}
                 className="bg-white text-black text-[11px] font-extrabold px-2.5 py-1 rounded-full border-2 border-black doodle-shadow-sm cursor-pointer"
@@ -331,6 +345,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <option value="morning_owl">🌅 Morning Owl (08:00 - 12:00)</option>
                 <option value="afternoon_lion">🦁 Afternoon Lion (13:00 - 17:00)</option>
                 <option value="night_owl">🌙 Night Owl (19:00 - 23:00)</option>
+                <option value="deep_night">🦉 Deep Night (00:00 - 04:00)</option>
               </select>
             </div>
           </div>
@@ -355,8 +370,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="flex bg-gray-100 dark:bg-[#0f172a] doodle-border-sm p-1 gap-1">
                 {[
                   { id: 'light', value: false, label: t.light },
-                  { id: 'dark', value: true, label: t.dark },
-                  { id: 'system', value: 'system', label: t.system }
+                  { id: 'dark', value: true, label: t.dark }
                 ].map((item) => {
                   const isSelected = currentThemeMode === item.id;
                   return (
@@ -622,7 +636,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {openSection === 'backup' && (
           <div className="p-4 pt-1 border-t-2 border-black dark:border-slate-700 space-y-3 text-xs">
             <p className="text-gray-600 dark:text-gray-300 font-medium">
-              All your data stays on this device (Dexie.js / IndexedDB). Export a JSON backup to save a copy, or import one to restore it.
+              Your data lives in Firebase Cloud Firestore and syncs in real time. Export a JSON backup of your cloud data to save a copy, or import one to restore it back to your account.
             </p>
 
             {syncMessage && (
@@ -660,7 +674,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {openSection === 'info' && (
           <div className="p-4 pt-1 border-t-2 border-black dark:border-slate-700 space-y-2 text-xs font-medium text-gray-700 dark:text-gray-300">
             <p>• <strong>PWA Engine:</strong> Service Worker + Manifest v1</p>
-            <p>• <strong>Offline Database:</strong> Dexie.js (IndexedDB 4.x)</p>
+            <p>• <strong>Cloud Database:</strong> Firebase Cloud Firestore</p>
             <p>• <strong>Design Archetype:</strong> Neo-Brutalism ("Doodle Theory")</p>
             <p>• <strong>AI Model:</strong> Gemini 3.7 Flash Free Tier</p>
 

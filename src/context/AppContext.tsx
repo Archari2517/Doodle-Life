@@ -7,7 +7,9 @@ import {
   loginAsGuest, 
   loginWithEmail, 
   registerWithEmail, 
-  logoutUser 
+  logoutUser,
+  upgradeGuestWithGoogle,
+  upgradeGuestWithEmail
 } from '../lib/firebase';
 import { onAuthStateChanged, getRedirectResult, User as FirebaseUser } from 'firebase/auth';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
@@ -22,6 +24,7 @@ interface RescheduleProposal {
 interface AppContextType {
   user: UserProfile;
   authUser: FirebaseUser | null;
+  authError: string | null;
   tasks: Task[];
   goals: Goal[];
   routines: Routine[];
@@ -36,6 +39,8 @@ interface AppContextType {
   loginEmail: (email: string, pass: string) => Promise<void>;
   registerEmail: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
+  upgradeGuestGoogle: () => Promise<void>;
+  upgradeGuestEmail: (email: string, pass: string) => Promise<void>;
   updateUser: (updated: Partial<UserProfile>) => Promise<void>;
   addTask: (task: Partial<Task>) => Promise<void>;
   updateTask: (task: Task) => Promise<void>;
@@ -56,6 +61,7 @@ interface AppContextType {
   acknowledgeRoutineExpiry: (routineId: string) => Promise<void>;
   addJournal: (entry: Partial<JournalEntry>) => Promise<void>;
   deleteJournal: (journalId: string) => Promise<void>;
+  clearAuthError: () => void;
 }
 
 const DEFAULT_USER: UserProfile = {
@@ -71,6 +77,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [user, setUser] = useState<UserProfile>(DEFAULT_USER);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -88,11 +95,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     getRedirectResult(auth).catch((error) => {
       console.error('Redirect Login Error:', error);
+      // ⚠️ This used to be console-only — the user would finish the Google
+      // consent screen, get redirected back, and see... nothing, with zero
+      // explanation. Most commonly this is auth/unauthorized-domain (the
+      // current domain isn't in Firebase Console → Authentication →
+      // Settings → Authorized domains) or an in-app browser / blocked
+      // third-party storage that breaks the redirect handshake.
+      const code = error?.code || '';
+      let message = 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
+      if (code === 'auth/unauthorized-domain') {
+        message = 'โดเมนนี้ยังไม่ได้รับอนุญาตให้ใช้ Google Sign-In (ต้องเพิ่มใน Firebase Console > Authentication > Settings > Authorized domains)';
+      } else if (code === 'auth/account-exists-with-different-credential') {
+        message = 'อีเมลนี้เคยลงทะเบียนด้วยวิธีอื่นไว้แล้ว กรุณาเข้าสู่ระบบด้วยวิธีเดิม';
+      } else if (code === 'auth/credential-already-in-use' || code === 'auth/email-already-in-use') {
+        message = 'บัญชีนี้ถูกใช้งานแล้วในระบบ';
+      } else if (code === 'auth/network-request-failed') {
+        message = 'เชื่อมต่อเครือข่ายไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่';
+      } else if (code === 'auth/web-storage-unsupported' || code === 'auth/operation-not-supported-in-this-environment') {
+        message = 'เบราว์เซอร์นี้ (เช่น เปิดผ่านแอปแชท/โซเชียล) ไม่รองรับ Google Sign-In กรุณาเปิดด้วย Chrome/Safari โดยตรง';
+      } else if (code) {
+        message = `เข้าสู่ระบบไม่สำเร็จ: ${code}`;
+      }
+      setAuthError(message);
     });
 
     const unsubAuth = onAuthStateChanged(auth, (fbUser) => {
       setAuthUser(fbUser);
       if (fbUser) {
+        setAuthError(null);
         setIsSyncing(true);
 
         const userDocRef = doc(db, 'users', fbUser.uid);
@@ -183,6 +213,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const loginEmail = async (email: string, pass: string) => { await loginWithEmail(email, pass); };
   const registerEmail = async (email: string, pass: string) => { await registerWithEmail(email, pass); };
   const logout = async () => { await logoutUser(); };
+  const upgradeGuestGoogle = async () => { await upgradeGuestWithGoogle(); };
+  const upgradeGuestEmail = async (email: string, pass: string) => { await upgradeGuestWithEmail(email, pass); };
+  const clearAuthError = () => setAuthError(null);
 
   const syncNow = async () => {
     setIsSyncing(true);
@@ -532,6 +565,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       value={{
         user,
         authUser,
+        authError,
         tasks,
         goals,
         routines,
@@ -546,6 +580,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         loginEmail,
         registerEmail,
         logout,
+        upgradeGuestGoogle,
+        upgradeGuestEmail,
         updateUser,
         addTask,
         updateTask,
@@ -565,7 +601,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         renewRoutine,
         acknowledgeRoutineExpiry,
         addJournal,
-        deleteJournal
+        deleteJournal,
+        clearAuthError
       }}
     >
       {children}

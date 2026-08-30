@@ -68,7 +68,9 @@ const MainContent: React.FC = () => {
     acknowledgeRoutineExpiry,
     addJournal,
     deleteJournal,
-    logout
+    logout,
+    upgradeGuestGoogle,
+    upgradeGuestEmail
   } = useApp();
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -91,13 +93,8 @@ const MainContent: React.FC = () => {
 
     const root = document.documentElement;
 
-    // 1. ตรวจสอบค่า Dark Mode อย่างละเอียด (รองรับ true, false, 'system')
-    let isDark = false;
-    if (user.darkMode === true) {
-      isDark = true;
-    } else if (user.darkMode === 'system') {
-      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
+    // 1. ตรวจสอบค่า Dark Mode (รองรับ true, false)
+    const isDark = user.darkMode === true;
 
     // สลับ Class ที่ระดับ <html> สำหรับ Tailwind dark:
     if (isDark) {
@@ -182,6 +179,8 @@ const MainContent: React.FC = () => {
               goals={goals}
               tasks={tasks}
               onAddTask={addTask}
+              onUpdateTask={updateTask}
+              onDeleteTask={deleteTask}
               onNavigateTab={setActiveTab}
             />
           )}
@@ -203,6 +202,9 @@ const MainContent: React.FC = () => {
               user={user}
               goals={goals}
               routines={routines}
+              authUser={authUser}
+              onUpgradeGoogle={upgradeGuestGoogle}
+              onUpgradeEmail={upgradeGuestEmail}
               onUpdateUser={updateUser}
               onNavigateToGoals={() => setActiveTab('goals_flow')}
               onAddRoutine={addRoutine}
@@ -232,6 +234,9 @@ const MainContent: React.FC = () => {
               <ProfileView
                 user={user}
                 goals={goals}
+                authUser={authUser}
+                onUpgradeGoogle={upgradeGuestGoogle}
+                onUpgradeEmail={upgradeGuestEmail}
                 onUpdateProfile={(updatedData) => {
                   updateUser(updatedData);
                   setIsProfileOpen(false);

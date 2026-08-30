@@ -48,6 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
         return '🦁 Afternoon Lion';
       case 'night_owl':
         return '🌙 Night Owl';
+      case 'deep_night':
+        return '🦉 Deep Night';
       default:
         return '⚡ Energized';
     }
@@ -91,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onSync}
             disabled={isSyncing}
             className="p-2 doodle-border-sm bg-white dark:bg-[var(--card-bg)] hover:bg-[var(--accent-color)] doodle-shadow-sm doodle-btn flex items-center justify-center text-xs font-bold shrink-0"
-            title={isOnline ? 'Sync Dexie & Cloud' : 'Offline Mode (Local Dexie)'}
+            title={isOnline ? 'Sync with Firebase' : 'Offline (waiting to reconnect)'}
           >
             {isSyncing ? (
               <RefreshCw className="w-4 h-4 animate-spin text-[#1A1A1A] dark:text-gray-100" />

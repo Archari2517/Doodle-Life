@@ -147,7 +147,7 @@ export async function sendAiChatMessage(
   user: UserProfile,
   goals: Goal[],
   tasks: Task[]
-): Promise<{ text: string; action?: { type: 'add_task' | 'reschedule' | 'unwind' | 'open_goal'; label: string; payload?: any } }> {
+): Promise<{ text: string; action?: { type: 'add_task' | 'reschedule' | 'unwind' | 'open_goal' | 'edit_task' | 'delete_task'; label: string; payload?: any } }> {
   
   // 🎯 1. คำนวณตารางวันย้อนหลัง/ล่วงหน้า 14 วันแบบ Real-Time จากเวลาเครื่องปัจจุบัน
   const daysTh = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
@@ -176,19 +176,36 @@ export async function sendAiChatMessage(
     if (i === 1) dateLookup['พรุ่งนี้'] = dateStr;
   }
 
+  // 🗂️ 2. รายการงานปัจจุบันของผู้ใช้ (พร้อม ID) เพื่อให้ AI อ้างอิงเวลาแก้ไข/ลบงาน
+  const taskListForAi = tasks
+    .filter(t => !t.completed)
+    .map(t => `- [${t.id}] "${t.title}" | ${t.dueDate} ${t.dueTime || ''} | category: ${t.category}`)
+    .join('\n') || '(ยังไม่มีงานในระบบ)';
+
   const systemContext = `
 You are Doodle Life AI Assistant.
 
 CURRENT REAL-TIME DATE CALENDAR (STRICT TRUTH):
 ${dateMapList.join('\n')}
 
+USER'S CURRENT TASKS (STRICT TRUTH — use these exact IDs when editing or deleting):
+${taskListForAi}
+
 RULES FOR DATE SELECTION:
 1. When user requests to schedule/add a task, determine the intended day.
 2. YOU MUST USE THE EXACT "YYYY-MM-DD" DATE FROM THE CALENDAR LIST ABOVE.
-3. INCLUDE THE DATE STRING "YYYY-MM-DD" INSIDE YOUR "replyText" AND ALSO IN "action.payload.dueDate".
+3. INCLUDE THE DATE STRING "YYYY-MM-DD" INSIDE YOUR "replyText" AND ALSO IN "action.payload.dueDate" (for add_task) or "action.payload.updates.dueDate" (for edit_task, only if the date is changing).
 4. NEVER DEFAULT TO WEDNESDAY UNLESS THE USER EXPLICITLY ASKED FOR WEDNESDAY AND WEDNESDAY IS THE MATCHING DATE.
 
-JSON OUTPUT FORMAT:
+RULES FOR EDITING OR DELETING TASKS:
+5. When the user asks to change/move/rename/reschedule a SPECIFIC existing task, find the best matching task from "USER'S CURRENT TASKS" above by title/time, use action type "edit_task", and put ONLY the fields that changed inside "action.payload.updates" (e.g. title, dueDate, dueTime, durationMinutes, category). ALWAYS include "action.payload.taskId" (the exact ID from the list) and "action.payload.taskTitle" (for display).
+6. When the user asks to delete/remove/cancel a SPECIFIC existing task, use action type "delete_task" with "action.payload.taskId" and "action.payload.taskTitle".
+7. If you cannot confidently match the task the user is referring to (ambiguous or not found in the list), DO NOT invent a taskId — instead ask the user to clarify in "replyText" and omit "action" entirely.
+8. Never delete or edit more than one task per response — if the user wants to affect multiple tasks, handle the clearest one first and mention the rest in "replyText".
+
+JSON OUTPUT FORMAT EXAMPLES:
+
+Add a new task:
 {
   "replyText": "จัดไปครับ! เพิ่มงานพรีเซ้นต์ในวันที่ 2026-08-29 (วันเสาร์) ให้เรียบร้อยแล้ว",
   "action": {
@@ -200,6 +217,35 @@ JSON OUTPUT FORMAT:
       "dueTime": "14:00",
       "durationMinutes": 60,
       "category": "STUDY"
+    }
+  }
+}
+
+Edit an existing task:
+{
+  "replyText": "แก้เวลางาน \\"พรีเซ้นต์งาน\\" เป็น 16:00 ให้แล้วครับ",
+  "action": {
+    "type": "edit_task",
+    "label": "✏️ ยืนยันแก้ไขงาน",
+    "payload": {
+      "taskId": "abc123",
+      "taskTitle": "พรีเซ้นต์งาน",
+      "updates": {
+        "dueTime": "16:00"
+      }
+    }
+  }
+}
+
+Delete an existing task:
+{
+  "replyText": "ลบงาน \\"ประชุมทีม\\" ออกจากตารางให้แล้วครับ",
+  "action": {
+    "type": "delete_task",
+    "label": "🗑️ ยืนยันลบงาน",
+    "payload": {
+      "taskId": "xyz789",
+      "taskTitle": "ประชุมทีม"
     }
   }
 }
@@ -233,7 +279,8 @@ JSON OUTPUT FORMAT:
         const parsed = JSON.parse(jsonText);
 
         // 🛡️ Auto Fix: ซ่อม dueDate ใน payload ให้ตรงกับวันที่ YYYY-MM-DD ใน replyText ชัวร์ 100%
-        if (parsed.action && parsed.action.payload) {
+        // (จำกัดเฉพาะ add_task เท่านั้น เพื่อไม่ให้ไปยุ่งกับ payload ของ edit_task/delete_task)
+        if (parsed.action && parsed.action.type === 'add_task' && parsed.action.payload) {
           const dateInText = parsed.replyText?.match(/\d{4}-\d{2}-\d{2}/);
           if (dateInText) {
             parsed.action.payload.dueDate = dateInText[0];

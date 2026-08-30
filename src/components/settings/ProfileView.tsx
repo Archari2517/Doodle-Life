@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { User as FirebaseUser } from 'firebase/auth';
 import { UserProfile, Goal } from '../../types';
 import { 
   ArrowLeft, 
@@ -9,12 +10,16 @@ import {
   Upload,
   Link as LinkIcon,
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ShieldAlert
 } from 'lucide-react';
 
 interface ProfileViewProps {
   user: UserProfile;
   goals: Goal[];
+  authUser?: FirebaseUser | null;
+  onUpgradeGoogle?: () => Promise<void>;
+  onUpgradeEmail?: (email: string, pass: string) => Promise<void>;
   onUpdateProfile: (updatedData: Partial<UserProfile>) => void;
   onBack?: () => void;
   onLogout?: () => void;
@@ -23,6 +28,9 @@ interface ProfileViewProps {
 export const ProfileView: React.FC<ProfileViewProps> = ({
   user,
   goals,
+  authUser,
+  onUpgradeGoogle,
+  onUpgradeEmail,
   onUpdateProfile,
   onBack,
   onLogout
@@ -35,6 +43,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [notifications, setNotifications] = useState(true);
   const [soundEffects, setSoundEffects] = useState(true);
   const [language, setLanguage] = useState(user?.language || 'EN');
+
+  // 🔐 Guest → Permanent Account Upgrade
+  const [isUpgradeFormOpen, setIsUpgradeFormOpen] = useState(false);
+  const [upgradeEmail, setUpgradeEmail] = useState('');
+  const [upgradePassword, setUpgradePassword] = useState('');
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [upgradeError, setUpgradeError] = useState('');
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
 
   // Modal State & Input References
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
@@ -76,6 +92,48 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       language
     });
     alert('Save Changes Successfully! 🎉');
+  };
+
+  const handleUpgradeGoogle = async () => {
+    if (!onUpgradeGoogle) return;
+    setUpgradeError('');
+    setUpgradeLoading(true);
+    try {
+      await onUpgradeGoogle();
+      // Google upgrade uses a redirect — the page will reload and the
+      // account will already be permanent by the time it comes back.
+    } catch (err: any) {
+      console.error('Guest upgrade (Google) failed:', err);
+      if (err?.code === 'auth/credential-already-in-use') {
+        setUpgradeError('บัญชี Google นี้ถูกใช้ลงทะเบียนแล้ว กรุณาออกจากระบบแล้วเข้าสู่ระบบด้วยบัญชีนั้นแทน (ข้อมูลจะไม่ถูกรวมกันอัตโนมัติ)');
+      } else {
+        setUpgradeError('อัปเกรดบัญชีไม่สำเร็จ กรุณาลองใหม่');
+      }
+      setUpgradeLoading(false);
+    }
+  };
+
+  const handleUpgradeEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!onUpgradeEmail || !upgradeEmail || !upgradePassword) return;
+    setUpgradeError('');
+    setUpgradeLoading(true);
+    try {
+      await onUpgradeEmail(upgradeEmail, upgradePassword);
+      setUpgradeSuccess(true);
+      setIsUpgradeFormOpen(false);
+    } catch (err: any) {
+      console.error('Guest upgrade (Email) failed:', err);
+      if (err?.code === 'auth/email-already-in-use' || err?.code === 'auth/credential-already-in-use') {
+        setUpgradeError('อีเมลนี้ถูกใช้ลงทะเบียนแล้ว กรุณาออกจากระบบแล้วเข้าสู่ระบบด้วยอีเมลนั้นแทน (ข้อมูลจะไม่ถูกรวมกันอัตโนมัติ)');
+      } else if (err?.code === 'auth/weak-password') {
+        setUpgradeError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+      } else {
+        setUpgradeError('อัปเกรดบัญชีไม่สำเร็จ กรุณาลองใหม่');
+      }
+    } finally {
+      setUpgradeLoading(false);
+    }
   };
 
   return (
@@ -124,6 +182,96 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </p>
         </div>
       </div>
+
+      {/* 🔐 Guest Account Upgrade Banner — Anonymous (Guest) sessions get a new,
+          device-local uid every time. Nudge the user to link a permanent Google
+          or email account BEFORE they log out / switch devices, or their data
+          becomes unreachable (it's not deleted, just stuck under the old uid). */}
+      {authUser?.isAnonymous && (
+        <div className="bg-red-50 doodle-border doodle-shadow p-4 space-y-3 text-left border-red-400">
+          <div className="flex items-start gap-2">
+            <ShieldAlert className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-extrabold text-sm text-red-700">คุณกำลังใช้งานแบบ Guest</h3>
+              <p className="text-xs font-semibold text-red-700/80 mt-1 leading-relaxed">
+                ข้อมูลของคุณผูกกับอุปกรณ์นี้เท่านั้น ถ้าออกจากระบบ ล้างข้อมูลเบราว์เซอร์ หรือเปิดแอปในอุปกรณ์อื่น
+                คุณจะเข้าถึงข้อมูลชุดนี้ไม่ได้อีก (ข้อมูลไม่ได้หายไปจริง แต่จะค้างอยู่กับบัญชี Guest เก่า)
+                กดปุ่มด้านล่างเพื่อผูกกับบัญชีถาวร โดยข้อมูลทั้งหมดจะติดไปด้วย
+              </p>
+            </div>
+          </div>
+
+          {upgradeSuccess && (
+            <div className="p-2.5 text-xs font-bold text-green-700 bg-green-100 border-2 border-green-300 rounded-xl">
+              ✅ ผูกบัญชีสำเร็จ! ข้อมูลของคุณปลอดภัยแล้ว
+            </div>
+          )}
+
+          {upgradeError && (
+            <div className="p-2.5 text-xs font-bold text-red-600 bg-red-100 border-2 border-red-300 rounded-xl">
+              ⚠️ {upgradeError}
+            </div>
+          )}
+
+          {!isUpgradeFormOpen ? (
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleUpgradeGoogle}
+                disabled={upgradeLoading}
+                className="w-full py-2.5 px-4 bg-white hover:bg-gray-50 border-2 border-[#1A1A1A] font-extrabold text-xs rounded-xl transition-all disabled:opacity-50"
+              >
+                {upgradeLoading ? 'กำลังดำเนินการ...' : 'ผูกกับบัญชี Google'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsUpgradeFormOpen(true)}
+                disabled={upgradeLoading}
+                className="w-full py-2.5 px-4 bg-[#1A1A1A] text-white hover:bg-gray-800 font-extrabold text-xs rounded-xl border-2 border-[#1A1A1A] transition-all disabled:opacity-50"
+              >
+                ผูกกับอีเมล/รหัสผ่าน
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleUpgradeEmail} className="space-y-2">
+              <input
+                type="email"
+                placeholder="Email address"
+                value={upgradeEmail}
+                onChange={(e) => setUpgradeEmail(e.target.value)}
+                required
+                className="w-full px-3 py-2.5 bg-white border-2 border-[#1A1A1A] rounded-xl text-sm font-semibold focus:outline-none"
+              />
+              <input
+                type="password"
+                placeholder="Password (min 6 characters)"
+                value={upgradePassword}
+                onChange={(e) => setUpgradePassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full px-3 py-2.5 bg-white border-2 border-[#1A1A1A] rounded-xl text-sm font-semibold focus:outline-none"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={upgradeLoading}
+                  className="flex-1 py-2.5 bg-[#1A1A1A] text-white hover:bg-gray-800 font-extrabold text-xs rounded-xl border-2 border-[#1A1A1A] transition-all disabled:opacity-50"
+                >
+                  {upgradeLoading ? 'กำลังบันทึก...' : 'ยืนยัน'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsUpgradeFormOpen(false)}
+                  disabled={upgradeLoading}
+                  className="py-2.5 px-4 bg-white hover:bg-gray-50 border-2 border-[#1A1A1A] font-extrabold text-xs rounded-xl transition-all disabled:opacity-50"
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
 
       {/* 🎯 Card 1: Personal Info */}
       <div className="bg-white doodle-border doodle-shadow p-4 space-y-3">

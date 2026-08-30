@@ -7,7 +7,10 @@ import {
   signOut,
   signInAnonymously,
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  linkWithRedirect,
+  linkWithCredential,
+  EmailAuthProvider
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -42,6 +45,25 @@ export const loginAsGuest = () => signInAnonymously(auth);
 export const registerWithEmail = (email: string, pass: string) => createUserWithEmailAndPassword(auth, email, pass);
 export const loginWithEmail = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
 export const logoutUser = () => signOut(auth);
+
+// --- Guest Upgrade Helpers ---
+// A Guest session (signInAnonymously) gets a brand-new, device-local uid every
+// time it's created — it is never the same account twice, so its Firestore data
+// becomes orphaned the moment the guest logs out, switches browser/device, or
+// clears site data. These helpers "upgrade" the CURRENT anonymous session into a
+// permanent Google/email account via linkWith*, which keeps the same uid — so all
+// data already written under that uid (tasks, goals, routines, journals) carries
+// over automatically instead of starting from an empty account.
+export const upgradeGuestWithGoogle = () => {
+  if (!auth.currentUser) return Promise.reject(new Error('No active session to upgrade.'));
+  return linkWithRedirect(auth.currentUser, googleProvider);
+};
+
+export const upgradeGuestWithEmail = (email: string, pass: string) => {
+  if (!auth.currentUser) return Promise.reject(new Error('No active session to upgrade.'));
+  const credential = EmailAuthProvider.credential(email, pass);
+  return linkWithCredential(auth.currentUser, credential);
+};
 
 // --- Real-time Data Sync Helpers ---
 export async function saveUserProfileToCloud(userId: string, profile: UserProfile) {

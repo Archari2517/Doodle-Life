@@ -2,13 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, Goal, Task, ChatMessage } from '../../types';
 import { useTranslation } from '../../utils/translations';
 import { sendAiChatMessage } from '../../services/geminiService';
-import { Send, Sparkles, Calendar } from 'lucide-react';
+import { Send, Sparkles, Calendar, Pencil, Trash2 } from 'lucide-react';
 
 interface AiChatViewProps {
   user: UserProfile;
   goals: Goal[];
   tasks: Task[];
   onAddTask: (task: Partial<Task>) => void;
+  onUpdateTask: (task: Task) => void;
+  onDeleteTask: (taskId: string) => void;
   onNavigateTab: (tab: any) => void;
 }
 
@@ -17,6 +19,8 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
   goals,
   tasks,
   onAddTask,
+  onUpdateTask,
+  onDeleteTask,
   onNavigateTab
 }) => {
   const t = useTranslation(user.language);
@@ -130,6 +134,47 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, quickAction: undefined } : m));
       
       alert(`✨ บันทึกงานลงวันที่ ${targetDueDate} สำเร็จ!`);
+    } else if (msg.quickAction.type === 'edit_task') {
+      const payload = msg.quickAction.payload || {};
+      const targetTask = tasks.find(t => t.id === payload.taskId);
+
+      if (!targetTask) {
+        alert('⚠️ ไม่พบงานนี้แล้ว (อาจถูกลบหรือแก้ไขไปก่อนหน้านี้)');
+        setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, quickAction: undefined } : m));
+        return;
+      }
+
+      const updates = payload.updates || {};
+      const updatedTask: Task = {
+        ...targetTask,
+        ...updates,
+        // กันเหนียวกรณี App ใช้ field ชื่อ 'date' แทน 'dueDate'
+        date: updates.dueDate || targetTask.date
+      };
+
+      onUpdateTask(updatedTask);
+
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, quickAction: undefined } : m));
+
+      alert(`✏️ แก้ไขงาน "${payload.taskTitle || targetTask.title}" เรียบร้อยแล้ว!`);
+    } else if (msg.quickAction.type === 'delete_task') {
+      const payload = msg.quickAction.payload || {};
+      const targetTask = tasks.find(t => t.id === payload.taskId);
+
+      if (!targetTask) {
+        alert('⚠️ ไม่พบงานนี้แล้ว (อาจถูกลบไปก่อนหน้านี้)');
+        setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, quickAction: undefined } : m));
+        return;
+      }
+
+      const confirmed = window.confirm(`ยืนยันลบงาน "${payload.taskTitle || targetTask.title}" ใช่ไหม?`);
+      if (!confirmed) return;
+
+      onDeleteTask(payload.taskId);
+
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, quickAction: undefined } : m));
+
+      alert(`🗑️ ลบงาน "${payload.taskTitle || targetTask.title}" เรียบร้อยแล้ว!`);
     } else if (msg.quickAction.type === 'open_goal') {
       onNavigateTab('goals_flow');
     }
@@ -143,7 +188,7 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
   ];
 
   return (
-    <div className="pb-28 pt-2 px-4 max-w-md mx-auto flex flex-col h-[calc(100vh-145px)]">
+    <div className="pb-2 pt-2 px-4 max-w-md mx-auto flex flex-col h-[calc(100vh-145px)]">
       {/* Energy & Life Context Banner */}
       <div className="bg-[#E6D4F9] doodle-border doodle-shadow-sm p-3 mb-3 flex items-center justify-between text-xs shrink-0">
         <div className="flex items-center gap-2">
@@ -192,9 +237,19 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
                 {msg.quickAction && (
                   <button
                     onClick={() => handleExecuteAction(msg)}
-                    className="mt-3 w-full bg-accent hover:brightness-95 text-black doodle-border-sm py-2 px-3 font-extrabold text-[11px] doodle-btn flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#000]"
+                    className={`mt-3 w-full doodle-border-sm py-2 px-3 font-extrabold text-[11px] doodle-btn flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#000] ${
+                      msg.quickAction.type === 'delete_task'
+                        ? 'bg-[#FF9F9F] hover:brightness-95 text-black'
+                        : 'bg-accent hover:brightness-95 text-black'
+                    }`}
                   >
-                    <Calendar className="w-3.5 h-3.5" />
+                    {msg.quickAction.type === 'edit_task' ? (
+                      <Pencil className="w-3.5 h-3.5" />
+                    ) : msg.quickAction.type === 'delete_task' ? (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    ) : (
+                      <Calendar className="w-3.5 h-3.5" />
+                    )}
                     {msg.quickAction.label}
                   </button>
                 )}

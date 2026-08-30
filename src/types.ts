@@ -1,4 +1,4 @@
-export type EnergyType = 'morning_owl' | 'afternoon_lion' | 'night_owl';
+export type EnergyType = 'morning_owl' | 'afternoon_lion' | 'night_owl' | 'deep_night';
 export type ThemeAccent = 'yellow' | 'coral' | 'sky' | 'mint' | 'blue';
 export type Language = 'en' | 'th';
 export type EisenhowerQuadrant = 'now' | 'plan' | 'quick' | 'chill';
@@ -26,7 +26,7 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
-  category: string; // 'DATABASE' | 'MEETING' | 'STUDY' | 'WORK' | 'FITNESS' | 'UNWIND' | etc.
+  category: string; // 'DATABASE' | 'MEETING' | 'STUDY' | 'WORK' | 'FITNESS' | 'UNWIND' | 'HOME_FAMILY' | 'EVENTS' | 'FINANCE' | etc.
   categoryColor?: string;
   eisenhowerQuadrant: EisenhowerQuadrant;
   dueDate: string; // YYYY-MM-DD
@@ -114,7 +114,7 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   quickAction?: {
-    type: 'add_task' | 'reschedule' | 'unwind' | 'open_goal';
+    type: 'add_task' | 'reschedule' | 'unwind' | 'open_goal' | 'edit_task' | 'delete_task';
     payload?: any;
     label: string;
   };

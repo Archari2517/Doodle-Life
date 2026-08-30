@@ -935,6 +935,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     <option value="WORK">Work</option>
                     <option value="HEALTH">Health</option>
                     <option value="PERSONAL">Personal</option>
+                    <option value="HOME_FAMILY">Home &amp; Family</option>
+                    <option value="EVENTS">Events</option>
+                    <option value="FINANCE">Finance</option>
                   </select>
                 </div>
 

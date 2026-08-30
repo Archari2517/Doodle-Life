@@ -350,7 +350,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
           <div className="bg-white doodle-border doodle-shadow p-8 text-center min-h-[170px] flex flex-col items-center justify-center space-y-3">
             <span className="text-3xl text-amber-400">✦</span>
             <p className="font-bold text-[#1A1A1A] text-sm leading-relaxed px-4">
-              No tasks in this quadrant! Enjoy the clarity.
+              No tasks in this priority! Enjoy the clarity.
             </p>
           </div>
         ) : (

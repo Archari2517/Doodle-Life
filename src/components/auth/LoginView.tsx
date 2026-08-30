@@ -2,18 +2,24 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 
 export const LoginView: React.FC = () => {
-  const { login, loginAsGuestUser, loginEmail, registerEmail } = useApp();
+  const { login, loginAsGuestUser, loginEmail, registerEmail, authError, clearAuthError } = useApp();
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  // ข้อผิดพลาดจาก getRedirectResult() (เช่น หลังกด "Continue with Google" แล้วเด้งกลับมา)
+  // มาจาก context เพราะ component นี้ mount ใหม่ทุกครั้งหลัง redirect กลับ — error local
+  // state ของ handleGoogleLogin ด้านล่างจะไม่ทันเห็น error ที่เกิดตอนนั้น
+  const displayError = error || authError;
+
   // 1. Handle Google Login
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
       setError('');
+      clearAuthError();
       await login();
     } catch (err: any) {
       console.error("Google Login failed:", err);
@@ -28,6 +34,7 @@ export const LoginView: React.FC = () => {
     try {
       setLoading(true);
       setError('');
+      clearAuthError();
       await loginAsGuestUser();
     } catch (err: any) {
       console.error("Guest Login failed:", err);
@@ -45,6 +52,7 @@ export const LoginView: React.FC = () => {
     try {
       setLoading(true);
       setError('');
+      clearAuthError();
       if (isSignUp) {
         await registerEmail(email, password);
       } else {
@@ -90,9 +98,9 @@ export const LoginView: React.FC = () => {
           </p>
 
           {/* Error Message */}
-          {error && (
+          {displayError && (
             <div className="p-3 text-xs font-bold text-red-600 bg-red-100 border-2 border-[#1A1A1A] rounded-xl text-left">
-              ⚠️ {error}
+              ⚠️ {displayError}
             </div>
           )}
 
