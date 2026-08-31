@@ -30,7 +30,7 @@ const ProfileView = lazy(() =>
 const ViewLoadingFallback: React.FC = () => (
   <div className="flex items-center justify-center py-24">
     <div className="doodle-border doodle-shadow bg-white px-6 py-4 flex items-center gap-3">
-      <div className="w-4 h-4 rounded-full bg-[#1A1A1A] animate-pulse" />
+      <div className="w-4 h-4 rounded-full bg-[var(--ink-solid)] animate-pulse" />
       <span className="font-extrabold text-sm font-['Space_Grotesk']">Loading...</span>
     </div>
   </div>
@@ -149,7 +149,7 @@ const MainContent: React.FC = () => {
 
   return (
     /* 👈 ถอด ${user.darkMode ? 'dark-theme' : ''} ออกเพื่อไม่ให้สไตล์ตีกัน ให้ควบคุมผ่าน class "dark" บน <html> จุดเดียว */
-    <div className="min-h-screen bg-[#FCF9F8] dark:bg-gray-900 text-[#1A1A1A] dark:text-gray-100 flex flex-col font-['Manrope'] selection:bg-accent selection:text-black transition-colors duration-200">
+    <div className="min-h-screen bg-[var(--paper-bg)] text-[var(--text-main)] flex flex-col font-['Manrope'] selection:bg-accent selection:text-black transition-colors duration-200">
       {/* 🗂️ Lifecycle & Categories — Pop-up แจ้งเตือน Routine ที่หมดอายุ */}
       <RoutineExpiryAlert
         routines={routines}
@@ -256,7 +256,7 @@ const MainContent: React.FC = () => {
           )}
 
           {isProfileOpen && (
-            <div className="fixed inset-0 z-50 bg-[#FCF9F8] dark:bg-gray-900 overflow-y-auto">
+            <div className="fixed inset-0 z-50 bg-[var(--paper-bg)] overflow-y-auto">
               <ProfileView
                 user={user}
                 goals={goals}

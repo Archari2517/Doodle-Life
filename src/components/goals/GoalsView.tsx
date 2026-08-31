@@ -205,7 +205,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
 
             <button
               type="submit"
-              className="w-full bg-[#1A1A1A] text-[var(--accent-color)] doodle-border border-[#1A1A1A] py-3.5 rounded-xl font-black text-base flex items-center justify-center gap-2 doodle-btn shadow-[3px_3px_0px_#000]"
+              className="w-full bg-[var(--ink-solid)] text-[var(--accent-color)] doodle-border border-[var(--ink-black)] py-3.5 rounded-xl font-black text-base flex items-center justify-center gap-2 doodle-btn shadow-[3px_3px_0px_var(--ink-black)]"
             >
               <span className="text-xl font-black">+</span> {t.addGoalBtn}
             </button>
@@ -227,7 +227,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                   {goal.categoryIcon || '🎯'}
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-[#1A1A1A] line-clamp-1">
+                  <h3 className="font-extrabold text-sm text-[var(--text-main)] line-clamp-1">
                     {goal.title}
                   </h3>
                   <span className="text-[10px] font-bold text-gray-600 uppercase">
@@ -245,7 +245,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                     className={`flex items-center justify-center w-7 h-7 rounded-lg doodle-border-sm doodle-btn transition-all ${
                       goal.isPinned
                         ? 'bg-accent text-[#1A1A1A]'
-                        : 'bg-white text-gray-400 hover:text-[#1A1A1A]'
+                        : 'bg-white text-gray-400 hover:text-[var(--text-main)]'
                     }`}
                   >
                     <Star className={`w-3.5 h-3.5 ${goal.isPinned ? 'fill-current' : ''}`} />
@@ -255,7 +255,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => handleToggleComplete(goal)}
-                  className="flex items-center gap-1 bg-white hover:bg-gray-100 text-[#1A1A1A] px-2.5 py-1 rounded-lg doodle-border-sm font-extrabold text-xs doodle-btn transition-all"
+                  className="flex items-center gap-1 bg-white hover:bg-gray-100 text-[var(--text-main)] px-2.5 py-1 rounded-lg doodle-border-sm font-extrabold text-xs doodle-btn transition-all"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>สำเร็จ</span>
@@ -277,7 +277,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
       {/* 🔹 2. หมวดเป้าหมายที่สำเร็จแล้ว (ย้ายมาอยู่นี่ + ปุ่มและแถบเปลี่ยนเป็นสีเขียว) */}
       {completedGoals.length > 0 && (
         <div className="space-y-3 pt-4">
-          <h2 className="text-lg font-extrabold font-['Bricolage_Grotesque'] text-[#1A1A1A]">
+          <h2 className="text-lg font-extrabold font-['Bricolage_Grotesque'] text-[var(--text-main)]">
             เป้าหมายที่สำเร็จแล้ว ({completedGoals.length})
           </h2>
 

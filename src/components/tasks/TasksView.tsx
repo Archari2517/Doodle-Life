@@ -218,7 +218,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
       {/* Target / Goals Banner */}
       <div className="bg-accent doodle-border doodle-shadow p-4 relative flex justify-between items-center">
         <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-bold tracking-tight text-[#1A1A1A]">
+          <h2 className="text-xl font-bold tracking-tight text-[var(--text-main)]">
             เป้าหมาย
           </h2>
           {featuredGoal ? (
@@ -273,7 +273,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
                 </span>
               </div>
               <div>
-                <h3 className="font-bold text-xs leading-tight text-[#1A1A1A]">
+                <h3 className="font-bold text-xs leading-tight text-[var(--text-main)]">
                   {q.title}
                 </h3>
                 <p className={`text-[10px] mt-1 font-medium leading-tight ${
@@ -289,7 +289,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
 
       {/* Task List Header + Filters (หมวดหมู่ / ทั้งหมด-วันนี้-เลือกวันที่) */}
       <div className="pt-2 flex items-center justify-between gap-2 flex-wrap">
-        <h3 className="font-bold text-sm text-[#1A1A1A]">
+        <h3 className="font-bold text-sm text-[var(--text-main)]">
           {filteredTasks.length} tasks
         </h3>
 
@@ -355,7 +355,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
         {filteredTasks.length === 0 ? (
           <div className="bg-white doodle-border doodle-shadow p-8 text-center min-h-[170px] flex flex-col items-center justify-center space-y-3">
             <span className="text-3xl text-amber-400">✦</span>
-            <p className="font-bold text-[#1A1A1A] text-sm leading-relaxed px-4">
+            <p className="font-bold text-[var(--text-main)] text-sm leading-relaxed px-4">
               No tasks in this priority! Enjoy the clarity.
             </p>
           </div>
@@ -373,7 +373,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
                   <button
                     onClick={() => handleCheck(task.id, task.completed)}
                     className={`w-5 h-5 doodle-border-sm shrink-0 mt-0.5 flex items-center justify-center transition-colors ${
-                      task.completed ? 'bg-[#1A1A1A] text-white' : 'bg-white hover:bg-gray-100'
+                      task.completed ? 'bg-[var(--ink-solid)] text-white' : 'bg-white hover:bg-gray-100'
                     }`}
                   >
                     {task.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -382,7 +382,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start gap-2">
                       <h4 className={`text-sm font-bold leading-snug line-clamp-2 ${
-                        task.completed ? 'line-through text-gray-400' : 'text-[#1A1A1A]'
+                        task.completed ? 'line-through text-gray-400' : 'text-[var(--text-main)]'
                       }`}>
                         {task.title}
                       </h4>

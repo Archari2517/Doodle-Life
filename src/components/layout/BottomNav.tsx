@@ -56,7 +56,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#FCF9F8] dark:bg-gray-900 border-t-[3px] border-[#1A1A1A] py-2 px-3 shadow-[0_-3px_0px_#1A1A1A] transition-colors duration-200">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--paper-bg)] border-t-[3px] border-[var(--ink-black)] py-2 px-3 shadow-[0_-3px_0px_var(--ink-black)] transition-colors duration-200">
       <div className="max-w-md mx-auto flex items-center justify-around gap-1">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id || (tab.id === 'settings' && activeTab === 'goals_flow');
@@ -66,7 +66,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               onClick={() => onChangeTab(tab.id)}
               className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all duration-150 relative ${
                 isActive
-                  ? 'scale-105 font-bold text-[#1A1A1A] dark:text-gray-100'
+                  ? 'scale-105 font-bold text-[var(--text-main)]'
                   : 'text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-gray-100 font-medium opacity-80'
               }`}
             >

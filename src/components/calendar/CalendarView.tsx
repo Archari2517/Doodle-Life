@@ -447,7 +447,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   ? 'bg-emerald-100 border-dashed border-emerald-600 scale-105 z-20'
                   : day.isSelected
                   ? 'bg-accent doodle-shadow scale-105 z-10 border-[3px]'
-                  : 'bg-white doodle-shadow-sm hover:bg-[#FDFCF8]'
+                  : 'bg-white doodle-shadow-sm hover:bg-[var(--paper-bg)]'
               }`}
             >
               <span className="text-[11px] font-extrabold uppercase tracking-tight text-gray-700">
@@ -541,13 +541,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* 🎯 Missed Tasks Alert Card */}
       {missedTasks.length > 0 && (
-        <div className="bg-[#FFE5E5] doodle-border doodle-shadow p-4 relative overflow-hidden transition-all">
+        <div className="bg-[var(--danger-bg-soft)] doodle-border doodle-shadow p-4 relative overflow-hidden transition-all">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-[#FF4D4D] text-white flex items-center justify-center text-xs font-black">
                 !
               </div>
-              <h3 className="font-extrabold text-sm md:text-base text-[#93000A]">
+              <h3 className="font-extrabold text-sm md:text-base text-[var(--danger-text)]">
                 {t.missedTasks} ({missedTasks.length})
               </h3>
             </div>
@@ -573,7 +573,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           <button
             onClick={handleTriggerAiReschedule}
             disabled={isRescheduling}
-            className="w-full bg-[#1A1A1A] text-white doodle-border border-[#1A1A1A] py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 doodle-btn doodle-shadow-sm hover:bg-black"
+            className="w-full bg-[var(--ink-solid)] text-white doodle-border border-[var(--ink-black)] py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 doodle-btn doodle-shadow-sm hover:bg-black"
           >
             <Sparkles className="w-4 h-4 text-[var(--accent-color)] animate-pulse" />
             {isRescheduling ? 'Gemini AI calculating optimal slots...' : `⚡ ${t.aiReschedule}`}
@@ -584,7 +584,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       {/* 🎯 AI Reschedule Proposals Modal */}
       {proposals && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#FCF9F8] doodle-border doodle-shadow-lg max-w-md w-full p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+          <div className="bg-[var(--paper-bg)] doodle-border doodle-shadow-lg max-w-md w-full p-5 space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b-2 border-black pb-2">
               <div className="flex items-center gap-2">
                 <span className="text-xl">⚡</span>
@@ -608,7 +608,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               {proposals.map((p, idx) => (
                 <div key={idx} className="bg-white doodle-border-sm p-3.5 doodle-shadow-sm space-y-1.5">
                   <div className="flex justify-between items-start">
-                    <h4 className="font-bold text-sm text-[#1A1A1A]">{p.taskTitle}</h4>
+                    <h4 className="font-bold text-sm text-[var(--text-main)]">{p.taskTitle}</h4>
                     <span className="bg-accent text-[10px] font-black px-2 py-0.5 rounded-full border border-black">
                       {p.newTime}
                     </span>
@@ -629,7 +629,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               </button>
               <button
                 onClick={handleApplyProposals}
-                className="flex-1 py-2.5 bg-[#1A1A1A] text-[var(--accent-color)] doodle-border border-[#1A1A1A] font-extrabold text-xs doodle-btn flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 bg-[var(--ink-solid)] text-[var(--accent-color)] doodle-border border-[var(--ink-black)] font-extrabold text-xs doodle-btn flex items-center justify-center gap-1.5"
               >
                 <Check className="w-4 h-4" /> Apply All Slots
               </button>
@@ -714,7 +714,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <p className="text-sm font-bold text-gray-700">{t.noTasks}</p>
             <button
               onClick={() => setShowAddModal(true)}
-              className="mt-2 bg-[#1A1A1A] text-white px-4 py-2 rounded-xl text-xs font-bold doodle-btn inline-flex items-center gap-1.5"
+              className="mt-2 bg-[var(--ink-solid)] text-white px-4 py-2 rounded-xl text-xs font-bold doodle-btn inline-flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5 text-[var(--accent-color)]" /> {t.addTask}
             </button>
@@ -739,7 +739,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 } ${draggedTaskId === task.id ? 'opacity-40 border-dashed border-gray-400' : ''}`}
               >
                 {task.isAiRescheduled && (
-                  <div className="absolute -top-3.5 right-4 bg-accent px-3 py-0.5 doodle-border-sm border-b-0 rounded-t-lg font-black text-[10px] flex items-center gap-1 shadow-[2px_0px_0px_#1A1A1A]">
+                  <div className="absolute -top-3.5 right-4 bg-accent px-3 py-0.5 doodle-border-sm border-b-0 rounded-t-lg font-black text-[10px] flex items-center gap-1 shadow-[2px_0px_0px_var(--ink-black)]">
                     <Sparkles className="w-3 h-3" /> AI {task.dueTime}
                   </div>
                 )}
@@ -748,7 +748,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   <button
                     onClick={() => handleCheckTask(task.id, task.completed)}
                     className={`w-6 h-6 rounded-md doodle-border-sm shrink-0 mt-0.5 flex items-center justify-center transition-all ${
-                      task.completed ? 'bg-[#1A1A1A] text-white' : 'bg-white hover:bg-gray-100'
+                      task.completed ? 'bg-[var(--ink-solid)] text-white' : 'bg-white hover:bg-gray-100'
                     }`}
                   >
                     {task.completed && <Check className="w-4 h-4 stroke-[3]" />}
@@ -757,7 +757,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <h3 className={`font-bold text-base leading-snug line-clamp-1 ${
-                        task.completed ? 'line-through text-gray-500' : 'text-[#1A1A1A]'
+                        task.completed ? 'line-through text-gray-500' : 'text-[var(--text-main)]'
                       }`}>
                         {task.title}
                       </h3>

@@ -31,10 +31,10 @@ export const RoutineExpiryAlert: React.FC<RoutineExpiryAlertProps> = ({
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-[#FCF9F8] doodle-border doodle-shadow-lg max-w-sm w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[var(--paper-bg)] doodle-border doodle-shadow-lg max-w-sm w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-start justify-between gap-2">
-          <div className="w-10 h-10 rounded-full bg-[#FFE5E5] doodle-border-sm flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5 text-[#93000A]" />
+          <div className="w-10 h-10 rounded-full bg-[var(--danger-bg-soft)] doodle-border-sm flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-[var(--danger-text)]" />
           </div>
           <button
             onClick={() => onAcknowledge(current.id)}
@@ -46,18 +46,18 @@ export const RoutineExpiryAlert: React.FC<RoutineExpiryAlertProps> = ({
         </div>
 
         <div>
-          <h3 className="font-extrabold text-base font-['Bricolage_Grotesque'] text-[#1A1A1A]">
+          <h3 className="font-extrabold text-base font-['Bricolage_Grotesque'] text-[var(--text-main)]">
             {isTh ? 'กิจวัตรหมดอายุแล้ว' : 'Routine expired'}
           </h3>
           <p className="text-xs font-bold text-gray-700 mt-1.5 leading-relaxed">
             {isTh ? (
               <>
-                Routine <span className="text-[#93000A]">[{current.title}]</span> หมดอายุแล้ว
+                Routine <span className="text-[var(--danger-text)]">[{current.title}]</span> หมดอายุแล้ว
                 ต้องการลบออก หรือตั้งต่อ?
               </>
             ) : (
               <>
-                Routine <span className="text-[#93000A]">[{current.title}]</span> has expired.
+                Routine <span className="text-[var(--danger-text)]">[{current.title}]</span> has expired.
                 Do you want to delete it or continue it?
               </>
             )}
@@ -81,7 +81,7 @@ export const RoutineExpiryAlert: React.FC<RoutineExpiryAlertProps> = ({
           </button>
           <button
             onClick={() => onRenewRoutine(current.id)}
-            className="flex-1 py-2.5 bg-[#1A1A1A] text-[var(--accent-color)] doodle-border border-[#1A1A1A] font-extrabold text-xs doodle-btn flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 bg-[var(--ink-solid)] text-[var(--accent-color)] doodle-border border-[var(--ink-black)] font-extrabold text-xs doodle-btn flex items-center justify-center gap-1.5"
           >
             <RotateCcw className="w-3.5 h-3.5" /> {isTh ? 'ตั้งต่อ' : 'Renew'}
           </button>

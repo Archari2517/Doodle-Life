@@ -154,7 +154,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       {/* 🎯 Accent Hero Header Card */}
       <div className="bg-accent doodle-border doodle-shadow p-6 text-center space-y-3 text-[#1A1A1A]">
         <div className="relative inline-block">
-          <div className="w-24 h-24 rounded-2xl bg-white border-2 border-black overflow-hidden shadow-[2px_2px_0px_#000] mx-auto">
+          <div className="w-24 h-24 rounded-2xl bg-white border-2 border-black overflow-hidden shadow-[2px_2px_0px_var(--ink-black)] mx-auto">
             {avatarUrl ? (
               <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
             ) : (
@@ -166,7 +166,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <button 
             type="button"
             onClick={() => setIsAvatarModalOpen(true)}
-            className="absolute -bottom-1 -right-1 bg-white p-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_#000] hover:scale-110 active:scale-95 transition-transform"
+            className="absolute -bottom-1 -right-1 bg-white p-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_var(--ink-black)] hover:scale-110 active:scale-95 transition-transform"
             title="Change Avatar"
           >
             <Pencil className="w-4 h-4 text-black stroke-[2.5]" />
@@ -219,7 +219,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 type="button"
                 onClick={handleUpgradeGoogle}
                 disabled={upgradeLoading}
-                className="w-full py-2.5 px-4 bg-white hover:bg-gray-50 border-2 border-[#1A1A1A] font-extrabold text-xs rounded-xl transition-all disabled:opacity-50"
+                className="w-full py-2.5 px-4 bg-white hover:bg-gray-50 border-2 border-[var(--ink-black)] font-extrabold text-xs rounded-xl transition-all disabled:opacity-50"
               >
                 {upgradeLoading ? 'กำลังดำเนินการ...' : 'ผูกกับบัญชี Google'}
               </button>
@@ -227,7 +227,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 type="button"
                 onClick={() => setIsUpgradeFormOpen(true)}
                 disabled={upgradeLoading}
-                className="w-full py-2.5 px-4 bg-[#1A1A1A] text-white hover:bg-gray-800 font-extrabold text-xs rounded-xl border-2 border-[#1A1A1A] transition-all disabled:opacity-50"
+                className="w-full py-2.5 px-4 bg-[var(--ink-solid)] text-white hover:bg-gray-800 font-extrabold text-xs rounded-xl border-2 border-[var(--ink-black)] transition-all disabled:opacity-50"
               >
                 ผูกกับอีเมล/รหัสผ่าน
               </button>
@@ -240,7 +240,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 value={upgradeEmail}
                 onChange={(e) => setUpgradeEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2.5 bg-white border-2 border-[#1A1A1A] rounded-xl text-sm font-semibold focus:outline-none"
+                className="w-full px-3 py-2.5 bg-white border-2 border-[var(--ink-black)] rounded-xl text-sm font-semibold focus:outline-none"
               />
               <input
                 type="password"
@@ -249,13 +249,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 onChange={(e) => setUpgradePassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-3 py-2.5 bg-white border-2 border-[#1A1A1A] rounded-xl text-sm font-semibold focus:outline-none"
+                className="w-full px-3 py-2.5 bg-white border-2 border-[var(--ink-black)] rounded-xl text-sm font-semibold focus:outline-none"
               />
               <div className="flex gap-2">
                 <button
                   type="submit"
                   disabled={upgradeLoading}
-                  className="flex-1 py-2.5 bg-[#1A1A1A] text-white hover:bg-gray-800 font-extrabold text-xs rounded-xl border-2 border-[#1A1A1A] transition-all disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-[var(--ink-solid)] text-white hover:bg-gray-800 font-extrabold text-xs rounded-xl border-2 border-[var(--ink-black)] transition-all disabled:opacity-50"
                 >
                   {upgradeLoading ? 'กำลังบันทึก...' : 'ยืนยัน'}
                 </button>
@@ -263,7 +263,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   type="button"
                   onClick={() => setIsUpgradeFormOpen(false)}
                   disabled={upgradeLoading}
-                  className="py-2.5 px-4 bg-white hover:bg-gray-50 border-2 border-[#1A1A1A] font-extrabold text-xs rounded-xl transition-all disabled:opacity-50"
+                  className="py-2.5 px-4 bg-white hover:bg-gray-50 border-2 border-[var(--ink-black)] font-extrabold text-xs rounded-xl transition-all disabled:opacity-50"
                 >
                   ยกเลิก
                 </button>

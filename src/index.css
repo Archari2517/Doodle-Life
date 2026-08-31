@@ -21,6 +21,15 @@
     --card-bg: #FFFFFF;
     --text-main: #1A1A1A;
     --text-muted: #4A4A4A;
+    /* พื้นชิป/แบดจ์สีเทาอ่อน (bg-gray-50/100/200/300) */
+    --chip-bg: #F3F4F6;
+    /* ปุ่ม/แถบ "ดำทึบ" (filled ink) เช่นปุ่ม CTA หลัก, chip ที่ถูกเลือก, progress fill */
+    --ink-solid: #1A1A1A;
+    /* กลุ่มสีแดง/อันตราย (ปุ่มลบ, ข้อความเตือน, แบนเนอร์แจ้งเตือน) */
+    --danger-text: #93000A;
+    --danger-bg-soft: #FFE5E5;
+    --danger-solid: #93000A;
+    --danger-solid-hover: #7a0008;
   }
 
   /* 🌙 Dark Mode Support */
@@ -29,6 +38,18 @@
     --card-bg: #1E1E1E;
     --text-main: #FFFFFF;
     --text-muted: #A0A0A0;
+    /* 🖊️ สีกรอบ/เงาแบบ doodle ในโหมดมืด — สลับจากดำเป็นสีอ่อน ให้ตัดกับพื้นหลังเข้มชัดเจน */
+    --ink-black: #EDEDED;
+    /* พื้นชิป/แบดจ์ในโหมดมืด ให้เข้มกว่าการ์ดเล็กน้อยแทนสีเทาอ่อนเดิม */
+    --chip-bg: #2A2A2A;
+    /* ปุ่มดำทึบในโหมดมืด — ถ้ายังใช้ #1A1A1A จะกลืนกับพื้นหลัง (--paper-bg: #121212)
+       เลยยกให้อ่อนขึ้นเล็กน้อยแทน เพื่อให้ยังแยกออกจากพื้นหลังได้ชัดเจน ตัวหนังสือขาวยังอ่านออก */
+    --ink-solid: #2A2A2A;
+    /* สีแดง/อันตรายในโหมดมืด ให้สว่างขึ้นเพื่อให้อ่านออกบนพื้นเข้ม */
+    --danger-text: #F87171;
+    --danger-bg-soft: #3F1D1D;
+    --danger-solid: #B91C1C;
+    --danger-solid-hover: #991B1B;
   }
 
   body {
@@ -50,30 +71,30 @@
 
 /* Signature Neo-Brutalist Doodle Classes */
 .doodle-border {
-  border: 3px solid #1A1A1A;
+  border: 3px solid var(--ink-black);
   border-radius: 14px;
 }
 
 .doodle-border-sm {
-  border: 2px solid #1A1A1A;
+  border: 2px solid var(--ink-black);
   border-radius: 10px;
 }
 
 .doodle-border-pill {
-  border: 3px solid #1A1A1A;
+  border: 3px solid var(--ink-black);
   border-radius: 9999px;
 }
 
 .doodle-shadow {
-  box-shadow: 4px 4px 0px #1A1A1A;
+  box-shadow: 4px 4px 0px var(--ink-black);
 }
 
 .doodle-shadow-sm {
-  box-shadow: 2px 2px 0px #1A1A1A;
+  box-shadow: 2px 2px 0px var(--ink-black);
 }
 
 .doodle-shadow-lg {
-  box-shadow: 6px 6px 0px #1A1A1A;
+  box-shadow: 6px 6px 0px var(--ink-black);
 }
 
 .doodle-btn {
@@ -83,12 +104,12 @@
 
 .doodle-btn:active {
   transform: translate(3px, 3px);
-  box-shadow: 1px 1px 0px #1A1A1A;
+  box-shadow: 1px 1px 0px var(--ink-black);
 }
 
 .doodle-btn:hover:not(:disabled) {
   transform: translate(-1px, -1px);
-  box-shadow: 5px 5px 0px #1A1A1A;
+  box-shadow: 5px 5px 0px var(--ink-black);
 }
 
 .doodle-btn:disabled {
@@ -97,7 +118,7 @@
 }
 
 .doodle-input {
-  border: 3px solid #1A1A1A;
+  border: 3px solid var(--ink-black);
   border-radius: 12px;
   background-color: var(--card-bg);
   color: var(--text-main);
@@ -106,7 +127,7 @@
 
 .doodle-input:focus {
   outline: none;
-  box-shadow: 4px 4px 0px #1A1A1A;
+  box-shadow: 4px 4px 0px var(--ink-black);
 }
 
 /* 🕒 Time Input Fix — บังคับขนาดตัวอักษร/ความสูงให้เท่ากันทุกอุปกรณ์
@@ -137,9 +158,34 @@
   color: var(--text-main) !important;
 }
 
+/* 🖊️ กรอบเส้นดำแบบ Tailwind (border-black) ที่ใช้ตรง ๆ นอกคลาส doodle-*
+   ก็ต้องสลับเป็นสีอ่อนในโหมดมืดด้วย ไม่งั้นจะกลืนกับพื้นหลังเข้มเหมือนกัน */
+.dark .border-black {
+  border-color: var(--ink-black) !important;
+}
+
+/* 🧱 พื้นชิป/แบดจ์สีเทาอ่อน (input, badge, toggle track ฯลฯ) ให้เข้มขึ้นในโหมดมืด
+   เพื่อให้ยังตัดกับตัวหนังสือที่จับคู่กันอยู่ได้ */
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-gray-200,
+.dark .bg-gray-300 {
+  background-color: var(--chip-bg) !important;
+}
+
+/* ตัวหนังสือสีเทาเข้ม (700-900) ที่ยืนอยู่บนพื้นเข้ม/การ์ดมืด ให้สว่างขึ้นพอมองเห็นชัด */
+.dark .text-gray-900,
+.dark .text-gray-800,
 .dark .text-gray-700,
 .dark .text-gray-600 {
   color: var(--text-muted) !important;
+}
+
+/* ตัวหนังสือรอง (400-500) ให้จางกว่าเล็กน้อยแต่ยังอ่านออกบนพื้นเข้ม */
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: var(--text-muted) !important;
+  opacity: 0.85;
 }
 
 /* Notebook lined background */

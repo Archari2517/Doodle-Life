@@ -332,7 +332,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             />
             <button
               onClick={() => setIsEditingProfile(true)}
-              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white doodle-border-sm flex items-center justify-center text-xs shadow-[1px_1px_0px_#000] hover:scale-110 transition-transform text-black"
+              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white doodle-border-sm flex items-center justify-center text-xs shadow-[1px_1px_0px_var(--ink-black)] hover:scale-110 transition-transform text-black"
               title="Edit Profile"
             >
               ✏️
@@ -465,7 +465,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </p>
             <button
               onClick={handleInstallApp}
-              className="w-full bg-[#1A1A1A] dark:bg-[#0f172a] text-[var(--accent-color)] py-3 doodle-border border-[#1A1A1A] dark:border-slate-600 rounded-xl font-extrabold text-xs doodle-btn flex items-center justify-center gap-2"
+              className="w-full bg-[var(--ink-solid)] dark:bg-[#0f172a] text-[var(--accent-color)] py-3 doodle-border border-[var(--ink-black)] dark:border-slate-600 rounded-xl font-extrabold text-xs doodle-btn flex items-center justify-center gap-2"
             >
               <Smartphone className="w-4 h-4" /> {t.installAppBtn}
             </button>
@@ -707,7 +707,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Log Out Button */}
       <button
         onClick={onLogout}
-        className="w-full bg-white dark:bg-[#1e293b] text-[#93000A] dark:text-red-400 doodle-border border-[#93000A] dark:border-red-400 p-4 font-black text-sm flex items-center justify-center gap-2 doodle-btn doodle-shadow hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+        className="w-full bg-white dark:bg-[#1e293b] text-[var(--danger-text)] dark:text-red-400 doodle-border border-[var(--danger-text)] dark:border-red-400 p-4 font-black text-sm flex items-center justify-center gap-2 doodle-btn doodle-shadow hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
       >
         <LogOut className="w-4 h-4" /> {t.logout}
       </button>
@@ -715,7 +715,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Delete Account Button */}
       <button
         onClick={() => setShowDeleteAccountConfirm(true)}
-        className="w-full bg-[#93000A] dark:bg-red-900 text-white doodle-border border-[#93000A] dark:border-red-400 p-4 font-black text-sm flex items-center justify-center gap-2 doodle-btn doodle-shadow hover:bg-[#7a0008] dark:hover:bg-red-800 transition-colors"
+        className="w-full bg-[var(--danger-solid)] dark:bg-red-900 text-white doodle-border border-[var(--danger-text)] dark:border-red-400 p-4 font-black text-sm flex items-center justify-center gap-2 doodle-btn doodle-shadow hover:bg-[var(--danger-solid-hover)] dark:hover:bg-red-800 transition-colors"
       >
         <AlertTriangle className="w-4 h-4" />
         {user.language === 'th' ? 'ลบบัญชีผู้ใช้' : 'Delete Account'}
@@ -766,7 +766,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="button"
                     onClick={() => setRoutineScheduleType('fixed')}
                     className={`flex-1 py-1.5 rounded-md text-[11px] font-black transition-colors ${
-                      routineScheduleType === 'fixed' ? 'bg-[#1A1A1A] text-white' : 'text-gray-600'
+                      routineScheduleType === 'fixed' ? 'bg-[var(--ink-solid)] text-white' : 'text-gray-600'
                     }`}
                   >
                     {user.language === 'th' ? 'เวลาตายตัว' : 'Fixed Time'}
@@ -775,7 +775,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="button"
                     onClick={() => setRoutineScheduleType('flex')}
                     className={`flex-1 py-1.5 rounded-md text-[11px] font-black transition-colors ${
-                      routineScheduleType === 'flex' ? 'bg-[#1A1A1A] text-white' : 'text-gray-600'
+                      routineScheduleType === 'flex' ? 'bg-[var(--ink-solid)] text-white' : 'text-gray-600'
                     }`}
                   >
                     {user.language === 'th' ? 'ไม่ระบุเวลา' : 'Flex Habit'}
@@ -855,7 +855,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="button"
                     onClick={() => setRoutineDurationMode('indefinite')}
                     className={`flex-1 py-1.5 rounded-md text-[11px] font-black transition-colors ${
-                      routineDurationMode === 'indefinite' ? 'bg-[#1A1A1A] text-white' : 'text-gray-600'
+                      routineDurationMode === 'indefinite' ? 'bg-[var(--ink-solid)] text-white' : 'text-gray-600'
                     }`}
                   >
                     {user.language === 'th' ? 'ตลอดไป' : 'Indefinite'}
@@ -864,7 +864,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="button"
                     onClick={() => setRoutineDurationMode('date_range')}
                     className={`flex-1 py-1.5 rounded-md text-[11px] font-black transition-colors ${
-                      routineDurationMode === 'date_range' ? 'bg-[#1A1A1A] text-white' : 'text-gray-600'
+                      routineDurationMode === 'date_range' ? 'bg-[var(--ink-solid)] text-white' : 'text-gray-600'
                     }`}
                   >
                     {user.language === 'th' ? 'กำหนดวันที่' : 'Date Range'}
@@ -1016,7 +1016,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={handleConfirmDeleteAccount}
-                className="flex-1 py-2.5 bg-[#93000A] text-white doodle-border-sm font-black doodle-btn"
+                className="flex-1 py-2.5 bg-[var(--danger-solid)] text-white doodle-border-sm font-black doodle-btn"
               >
                 {user.language === 'th' ? 'ลบบัญชี' : 'Delete'}
               </button>

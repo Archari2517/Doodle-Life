@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-[#FCF9F8] dark:bg-gray-900 text-[#1A1A1A] dark:text-gray-100 border-b-[3px] border-[#1A1A1A] px-4 py-3 shadow-[0_3px_0px_#1A1A1A] transition-colors duration-200">
+    <header className="sticky top-0 z-30 bg-[var(--paper-bg)] text-[var(--text-main)] border-b-[3px] border-[var(--ink-black)] px-4 py-3 shadow-[0_3px_0px_var(--ink-black)] transition-colors duration-200">
       <div className="max-w-md mx-auto flex items-center justify-between gap-2">
         {/* Left: User Avatar & Quick Info */}
         <button
@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
                 ? user.avatarUrl 
                 : 'https://cdn.pfps.gg/pfps/5129-default-blue.png'}
               alt={user.name}
-              className="w-10 h-10 rounded-full object-cover doodle-border-sm border-2 border-[#1A1A1A] doodle-shadow-sm bg-accent"
+              className="w-10 h-10 rounded-full object-cover doodle-border-sm border-2 border-[var(--ink-black)] doodle-shadow-sm bg-accent"
             />
             <span className="absolute -bottom-1 -right-1 text-xs"></span>
           </div>
@@ -96,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
             title={isOnline ? 'Sync with Firebase' : 'Offline (waiting to reconnect)'}
           >
             {isSyncing ? (
-              <RefreshCw className="w-4 h-4 animate-spin text-[#1A1A1A] dark:text-gray-100" />
+              <RefreshCw className="w-4 h-4 animate-spin text-[var(--text-main)]" />
             ) : isOnline ? (
               <Wifi className="w-4 h-4 text-emerald-600" />
             ) : (

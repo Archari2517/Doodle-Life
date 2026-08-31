@@ -197,7 +197,7 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
             ⚡
           </div>
           <div>
-            <span className="font-extrabold text-[#1A1A1A]">
+            <span className="font-extrabold text-[var(--text-main)]">
               {user.energyType.replace('_', ' ').toUpperCase()}
             </span>
             <p className="text-[10px] text-gray-700 font-semibold">
@@ -206,7 +206,7 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
           </div>
         </div>
 
-        <span className="bg-white doodle-border-sm text-[10px] font-black px-2 py-0.5 shadow-[1px_1px_0px_#000]">
+        <span className="bg-white doodle-border-sm text-[10px] font-black px-2 py-0.5 shadow-[1px_1px_0px_var(--ink-black)]">
           Gemini 3.7
         </span>
       </div>
@@ -228,8 +228,8 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
               <div
                 className={`p-3.5 doodle-border doodle-shadow-sm text-xs leading-relaxed whitespace-pre-wrap ${
                   msg.sender === 'user'
-                    ? 'bg-[#1A1A1A] text-[var(--accent-color)] rounded-br-none'
-                    : 'bg-white text-[#1A1A1A] rounded-bl-none'
+                    ? 'bg-[var(--ink-solid)] text-[var(--accent-color)] rounded-br-none'
+                    : 'bg-white text-[var(--text-main)] rounded-bl-none'
                 }`}
               >
                 {msg.text}
@@ -238,7 +238,7 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
                 {msg.quickAction && (
                   <button
                     onClick={() => handleExecuteAction(msg)}
-                    className={`mt-3 w-full doodle-border-sm py-2 px-3 font-extrabold text-[11px] doodle-btn flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#000] ${
+                    className={`mt-3 w-full doodle-border-sm py-2 px-3 font-extrabold text-[11px] doodle-btn flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_var(--ink-black)] ${
                       msg.quickAction.type === 'delete_task'
                         ? 'bg-[#FF9F9F] hover:brightness-95 text-black'
                         : 'bg-accent hover:brightness-95 text-black'
@@ -310,7 +310,7 @@ export const AiChatView: React.FC<AiChatViewProps> = ({
         <button
           type="submit"
           disabled={!inputMessage.trim() || isLoading}
-          className="bg-[#1A1A1A] text-[var(--accent-color)] px-4 doodle-border border-[#1A1A1A] font-extrabold text-xs doodle-btn flex items-center justify-center shrink-0"
+          className="bg-[var(--ink-solid)] text-[var(--accent-color)] px-4 doodle-border border-[var(--ink-black)] font-extrabold text-xs doodle-btn flex items-center justify-center shrink-0"
         >
           <Send className="w-4 h-4" />
         </button>

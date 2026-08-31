@@ -77,12 +77,12 @@ export const LoginView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FCF9F8] text-[#1A1A1A] flex flex-col items-center justify-center p-6 font-['Manrope'] selection:bg-accent">
-      <div className="w-full max-w-sm bg-white border-4 border-[#1A1A1A] rounded-2xl p-8 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] space-y-6 text-center">
+    <div className="min-h-screen bg-[var(--paper-bg)] text-[var(--text-main)] flex flex-col items-center justify-center p-6 font-['Manrope'] selection:bg-accent">
+      <div className="w-full max-w-sm bg-white border-4 border-[var(--ink-black)] rounded-2xl p-8 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] space-y-6 text-center">
         
         {/* Logo & Header */}
         <div className="space-y-2">
-          <div className="w-16 h-16 rounded-2xl mx-auto overflow-hidden border-4 border-[#1A1A1A] shadow-[4px_4px_0px_0px_rgba(26,26,26,1)]">
+          <div className="w-16 h-16 rounded-2xl mx-auto overflow-hidden border-4 border-[var(--ink-black)] shadow-[4px_4px_0px_0px_rgba(26,26,26,1)]">
             <img src={appIconImg} alt="Planda" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-black font-['Space_Grotesk'] tracking-tight">
@@ -101,7 +101,7 @@ export const LoginView: React.FC = () => {
 
           {/* Error Message */}
           {displayError && (
-            <div className="p-3 text-xs font-bold text-red-600 bg-red-100 border-2 border-[#1A1A1A] rounded-xl text-left">
+            <div className="p-3 text-xs font-bold text-red-600 bg-red-100 border-2 border-[var(--ink-black)] rounded-xl text-left">
               ⚠️ {displayError}
             </div>
           )}
@@ -111,7 +111,7 @@ export const LoginView: React.FC = () => {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full py-3 px-4 bg-accent hover:brightness-95 border-3 border-[#1A1A1A] font-extrabold text-sm rounded-xl shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+            className="w-full py-3 px-4 bg-accent hover:brightness-95 border-3 border-[var(--ink-black)] font-extrabold text-sm rounded-xl shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 disabled:opacity-50"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -136,9 +136,9 @@ export const LoginView: React.FC = () => {
 
           {/* Divider */}
           <div className="flex items-center my-3">
-            <div className="flex-grow border-t-2 border-[#1A1A1A]"></div>
+            <div className="flex-grow border-t-2 border-[var(--ink-black)]"></div>
             <span className="px-3 text-xs font-black text-gray-400 uppercase">OR</span>
-            <div className="flex-grow border-t-2 border-[#1A1A1A]"></div>
+            <div className="flex-grow border-t-2 border-[var(--ink-black)]"></div>
           </div>
 
           {/* Email Sign In Form */}
@@ -150,7 +150,7 @@ export const LoginView: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2.5 bg-[#F5F5F5] border-2 border-[#1A1A1A] rounded-xl text-sm font-semibold focus:outline-none focus:bg-white"
+                className="w-full px-3 py-2.5 bg-[var(--chip-bg)] border-2 border-[var(--ink-black)] rounded-xl text-sm font-semibold focus:outline-none focus:bg-white"
               />
             </div>
             <div>
@@ -160,14 +160,14 @@ export const LoginView: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-3 py-2.5 bg-[#F5F5F5] border-2 border-[#1A1A1A] rounded-xl text-sm font-semibold focus:outline-none focus:bg-white"
+                className="w-full px-3 py-2.5 bg-[var(--chip-bg)] border-2 border-[var(--ink-black)] rounded-xl text-sm font-semibold focus:outline-none focus:bg-white"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-[#1A1A1A] text-white hover:bg-gray-800 font-extrabold text-sm rounded-xl border-2 border-[#1A1A1A] transition-all disabled:opacity-50"
+              className="w-full py-2.5 bg-[var(--ink-solid)] text-white hover:bg-gray-800 font-extrabold text-sm rounded-xl border-2 border-[var(--ink-black)] transition-all disabled:opacity-50"
             >
               {loading ? 'Processing...' : 'Sign In with Email'}
             </button>
@@ -194,7 +194,7 @@ export const LoginView: React.FC = () => {
               type="button"
               onClick={handleGuestLogin}
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-white hover:bg-gray-100 border-2 border-[#1A1A1A] font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-2.5 px-4 bg-white hover:bg-gray-100 border-2 border-[var(--ink-black)] font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <span>👤 Try without signing in (Guest)</span>
             </button>
@@ -289,7 +289,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ onClose, onRegister, mapA
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-white border-4 border-[#1A1A1A] rounded-2xl p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-sm bg-white border-4 border-[var(--ink-black)] rounded-2xl p-6 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b-2 border-black/10 pb-2">
           <h2 className="text-xl font-black font-['Space_Grotesk'] tracking-tight">
@@ -306,14 +306,14 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ onClose, onRegister, mapA
         </div>
 
         {error && (
-          <div className="p-3 text-xs font-bold text-red-600 bg-red-100 border-2 border-[#1A1A1A] rounded-xl text-left">
+          <div className="p-3 text-xs font-bold text-red-600 bg-red-100 border-2 border-[var(--ink-black)] rounded-xl text-left">
             ⚠️ {error}
           </div>
         )}
 
         {/* Avatar Picker */}
         <div className="flex flex-col items-center gap-2 pt-1">
-          <div className="w-20 h-20 rounded-2xl bg-[#F5F5F5] border-2 border-[#1A1A1A] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,1)]">
+          <div className="w-20 h-20 rounded-2xl bg-[var(--chip-bg)] border-2 border-[var(--ink-black)] overflow-hidden shadow-[2px_2px_0px_0px_rgba(26,26,26,1)]">
             <img
               src={avatarUrl || DEFAULT_AVATAR_URL}
               alt="Profile preview"
@@ -336,14 +336,14 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ onClose, onRegister, mapA
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex-1 py-2 px-2 bg-accent border-2 border-[#1A1A1A] font-extrabold text-[11px] rounded-xl shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(26,26,26,1)] transition-all"
+              className="flex-1 py-2 px-2 bg-accent border-2 border-[var(--ink-black)] font-extrabold text-[11px] rounded-xl shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(26,26,26,1)] transition-all"
             >
               📤 Upload Photo
             </button>
             <button
               type="button"
               onClick={() => setShowUrlInput((v) => !v)}
-              className="flex-1 py-2 px-2 bg-white border-2 border-[#1A1A1A] font-extrabold text-[11px] rounded-xl shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(26,26,26,1)] transition-all"
+              className="flex-1 py-2 px-2 bg-white border-2 border-[var(--ink-black)] font-extrabold text-[11px] rounded-xl shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(26,26,26,1)] transition-all"
             >
               🔗 Paste URL
             </button>
@@ -351,7 +351,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ onClose, onRegister, mapA
               <button
                 type="button"
                 onClick={() => setAvatarUrl('')}
-                className="py-2 px-2.5 bg-white border-2 border-[#1A1A1A] font-extrabold text-[11px] rounded-xl shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(26,26,26,1)] transition-all"
+                className="py-2 px-2.5 bg-white border-2 border-[var(--ink-black)] font-extrabold text-[11px] rounded-xl shadow-[2px_2px_0px_0px_rgba(26,26,26,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(26,26,26,1)] transition-all"
                 title="Remove photo (use default)"
               >
                 ✕
@@ -366,12 +366,12 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ onClose, onRegister, mapA
                 placeholder="https://example.com/image.jpg"
                 value={tempUrl}
                 onChange={(e) => setTempUrl(e.target.value)}
-                className="flex-1 px-2.5 py-2 bg-[#F5F5F5] border-2 border-[#1A1A1A] rounded-xl text-xs font-semibold focus:outline-none focus:bg-white"
+                className="flex-1 px-2.5 py-2 bg-[var(--chip-bg)] border-2 border-[var(--ink-black)] rounded-xl text-xs font-semibold focus:outline-none focus:bg-white"
               />
               <button
                 type="button"
                 onClick={handleApplyUrl}
-                className="px-3 bg-[#1A1A1A] text-white rounded-xl font-bold text-xs hover:bg-gray-800 transition-colors"
+                className="px-3 bg-[var(--ink-solid)] text-white rounded-xl font-bold text-xs hover:bg-gray-800 transition-colors"
               >
                 OK
               </button>
@@ -388,7 +388,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ onClose, onRegister, mapA
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2.5 bg-[#F5F5F5] border-2 border-[#1A1A1A] rounded-xl text-sm font-semibold focus:outline-none focus:bg-white"
+              className="w-full px-3 py-2.5 bg-[var(--chip-bg)] border-2 border-[var(--ink-black)] rounded-xl text-sm font-semibold focus:outline-none focus:bg-white"
             />
           </div>
           <div>
@@ -399,7 +399,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ onClose, onRegister, mapA
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-3 py-2.5 bg-[#F5F5F5] border-2 border-[#1A1A1A] rounded-xl text-sm font-semibold focus:outline-none focus:bg-white"
+              className="w-full px-3 py-2.5 bg-[var(--chip-bg)] border-2 border-[var(--ink-black)] rounded-xl text-sm font-semibold focus:outline-none focus:bg-white"
             />
           </div>
           <div>
@@ -410,14 +410,14 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ onClose, onRegister, mapA
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-3 py-2.5 bg-[#F5F5F5] border-2 border-[#1A1A1A] rounded-xl text-sm font-semibold focus:outline-none focus:bg-white"
+              className="w-full px-3 py-2.5 bg-[var(--chip-bg)] border-2 border-[var(--ink-black)] rounded-xl text-sm font-semibold focus:outline-none focus:bg-white"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-[#1A1A1A] text-white hover:bg-gray-800 font-extrabold text-sm rounded-xl border-2 border-[#1A1A1A] transition-all disabled:opacity-50"
+            className="w-full py-2.5 bg-[var(--ink-solid)] text-white hover:bg-gray-800 font-extrabold text-sm rounded-xl border-2 border-[var(--ink-black)] transition-all disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Sign Up with Email'}
           </button>

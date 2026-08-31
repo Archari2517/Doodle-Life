@@ -376,7 +376,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
           onClick={() => setActiveSubTab('overview')}
           className={`flex-1 py-2 px-2 text-xs font-black rounded-lg transition-all doodle-btn ${
             activeSubTab === 'overview'
-              ? 'bg-[#1A1A1A] text-white shadow-[2px_2px_0px_#000]'
+              ? 'bg-[var(--ink-solid)] text-white shadow-[2px_2px_0px_var(--ink-black)]'
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
@@ -386,7 +386,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
           onClick={() => setActiveSubTab('journal')}
           className={`flex-1 py-2 px-2 text-xs font-black rounded-lg transition-all doodle-btn ${
             activeSubTab === 'journal'
-              ? 'bg-[#1A1A1A] text-white shadow-[2px_2px_0px_#000]'
+              ? 'bg-[var(--ink-solid)] text-white shadow-[2px_2px_0px_var(--ink-black)]'
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
@@ -396,7 +396,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
           onClick={() => setActiveSubTab('unwind')}
           className={`flex-1 py-2 px-2 text-xs font-black rounded-lg transition-all doodle-btn ${
             activeSubTab === 'unwind'
-              ? 'bg-[#1A1A1A] text-white shadow-[2px_2px_0px_#000]'
+              ? 'bg-[var(--ink-solid)] text-white shadow-[2px_2px_0px_var(--ink-black)]'
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
@@ -408,7 +408,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
       {activeSubTab === 'overview' && (
         <div className="space-y-4">
           <div className="bg-accent p-5 doodle-border doodle-shadow relative rounded-2xl space-y-3">
-            <h2 className="text-xl font-black text-[#1A1A1A] font-['Bricolage_Grotesque']">
+            <h2 className="text-xl font-black text-[var(--text-main)] font-['Bricolage_Grotesque']">
               แนวโน้มอารมณ์สัปดาห์นี้
             </h2>
 
@@ -428,14 +428,14 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                       }}
                     >
                       {item.percent >= 40 && (
-                        <span className="text-[9px] font-extrabold text-[#1A1A1A] opacity-80">
+                        <span className="text-[9px] font-extrabold text-[var(--text-main)] opacity-80">
                           {item.percent}%
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <span className="font-extrabold text-xs text-[#1A1A1A]">
+                  <span className="font-extrabold text-xs text-[var(--text-main)]">
                     {item.label}
                   </span>
                 </div>
@@ -480,7 +480,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                   {restPercent > 0 ? `${restPercent}%` : ''}
                 </div>
                 <div
-                  className="h-full bg-[#1A1A1A] flex items-center justify-center text-[11px] font-black text-white transition-all duration-300"
+                  className="h-full bg-[var(--ink-solid)] flex items-center justify-center text-[11px] font-black text-white transition-all duration-300"
                   style={{ width: `${focusPercent}%` }}
                 >
                   {focusPercent > 0 ? `${focusPercent}%` : ''}
@@ -529,7 +529,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
       {/* SUB-TAB 2: JOURNAL */}
       {activeSubTab === 'journal' && (
         <div className="space-y-4">
-          <h2 className="text-xl font-extrabold font-[#1A1A1A] font-['Bricolage_Grotesque']">
+          <h2 className="text-xl font-extrabold text-[var(--text-main)] font-['Bricolage_Grotesque']">
             {t.howFeeling}
           </h2>
 
@@ -582,7 +582,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                 type="button"
                 onClick={handleSaveJournal}
                 disabled={!diaryText.trim() || isSavingJournal}
-                className="bg-[#1A1A1A] text-white px-4 py-2 doodle-border border-[#1A1A1A] rounded-xl font-bold text-xs doodle-btn flex items-center gap-1.5 shadow-[2px_2px_0px_#000]"
+                className="bg-[var(--ink-solid)] text-white px-4 py-2 doodle-border border-[var(--ink-black)] rounded-xl font-bold text-xs doodle-btn flex items-center gap-1.5 shadow-[2px_2px_0px_var(--ink-black)]"
               >
                 <Sparkles className="w-3.5 h-3.5 text-[var(--accent-color)]" />
                 {isSavingJournal ? 'Generating AI Healing...' : t.saveNote}
@@ -612,7 +612,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                   key={mood}
                   onClick={() => setFilterMood(mood)}
                   className={`px-3 py-1 doodle-border-sm text-xs font-bold shrink-0 doodle-btn ${
-                    filterMood === mood ? 'bg-[#1A1A1A] text-white' : 'bg-white'
+                    filterMood === mood ? 'bg-[var(--ink-solid)] text-white' : 'bg-white'
                   }`}
                 >
                   {mood === 'all' ? t.filterAllMoods : mood.replace('_', ' ')}
@@ -650,7 +650,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                     )}
 
                     {entry.aiHealingMessage && (
-                      <div className="bg-[#FCF9F8] doodle-border-sm p-2 text-[11px] text-purple-900 font-semibold italic">
+                      <div className="bg-[var(--paper-bg)] doodle-border-sm p-2 text-[11px] text-purple-900 font-semibold italic">
                         💡 AI: {entry.aiHealingMessage}
                       </div>
                     )}
@@ -714,12 +714,12 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                   <div className="text-[10px] font-black uppercase tracking-wider text-gray-700">
                     กิจกรรมผ่อนคลาย
                   </div>
-                  <h3 className="text-lg font-black font-[#1A1A1A] font-['Bricolage_Grotesque'] leading-snug">
+                  <h3 className="text-lg font-black text-[var(--text-main)] font-['Bricolage_Grotesque'] leading-snug">
                     {act.title}
                   </h3>
                   <button
                     onClick={() => handleAddUnwindToCalendar(act.title, act.duration, 'CHILL')}
-                    className="bg-[#1A1A1A] text-white py-2.5 px-4 doodle-border border-[#1A1A1A] rounded-xl text-xs font-bold doodle-btn shadow-[2px_2px_0px_#000]"
+                    className="bg-[var(--ink-solid)] text-white py-2.5 px-4 doodle-border border-[var(--ink-black)] rounded-xl text-xs font-bold doodle-btn shadow-[2px_2px_0px_var(--ink-black)]"
                   >
                     + {t.addToCalendar}
                   </button>
@@ -739,12 +739,12 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                     <span>🎯 {act.goalTitle}</span>
                     <span className="bg-white/80 px-2 py-0.5 rounded border border-black">{act.duration} นาที</span>
                   </div>
-                  <h3 className="text-lg font-black font-[#1A1A1A] font-['Bricolage_Grotesque'] leading-snug">
+                  <h3 className="text-lg font-black text-[var(--text-main)] font-['Bricolage_Grotesque'] leading-snug">
                     {act.title}
                   </h3>
                   <button
                     onClick={() => handleAddUnwindToCalendar(act.title, act.duration, 'GOAL_STEP')}
-                    className="bg-[#1A1A1A] text-white py-2.5 px-4 doodle-border border-[#1A1A1A] rounded-xl text-xs font-bold doodle-btn shadow-[2px_2px_0px_#000]"
+                    className="bg-[var(--ink-solid)] text-white py-2.5 px-4 doodle-border border-[var(--ink-black)] rounded-xl text-xs font-bold doodle-btn shadow-[2px_2px_0px_var(--ink-black)]"
                   >
                     + {t.addToCalendar}
                   </button>
@@ -755,7 +755,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
 
           {/* Quick Unwind Tools */}
           <div className="space-y-3 pt-2">
-            <h3 className="text-base font-extrabold font-[#1A1A1A] font-['Bricolage_Grotesque']">
+            <h3 className="text-base font-extrabold text-[var(--text-main)] font-['Bricolage_Grotesque']">
               {t.quickUnwindTools}
             </h3>
 
@@ -806,7 +806,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                       key={sound.id}
                       onClick={() => handleToggleAmbient(sound.id as any)}
                       className={`py-2 px-1 doodle-border-sm text-[11px] font-extrabold doodle-btn flex flex-col items-center gap-1 ${
-                        isActive ? 'bg-[#1A1A1A] text-white doodle-shadow-sm' : 'bg-white text-black'
+                        isActive ? 'bg-[var(--ink-solid)] text-white doodle-shadow-sm' : 'bg-white text-black'
                       }`}
                     >
                       <span className="text-base">{sound.icon}</span>
@@ -827,7 +827,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                     step={0.01}
                     value={ambientVolume}
                     onChange={(e) => handleAmbientVolumeChange(Number(e.target.value))}
-                    className="w-full accent-[#1A1A1A] cursor-pointer"
+                    className="w-full accent-[var(--ink-black)] cursor-pointer"
                   />
                   <span className="text-sm shrink-0">🔊</span>
                   <span className="text-[10px] font-black w-8 text-right shrink-0">
@@ -843,7 +843,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
       {/* 1-Min Guided Breathing Modal */}
       {showBreathingModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#FCF9F8] doodle-border doodle-shadow-lg max-w-sm w-full p-6 text-center space-y-6">
+          <div className="bg-[var(--paper-bg)] doodle-border doodle-shadow-lg max-w-sm w-full p-6 text-center space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="font-extrabold text-lg font-['Bricolage_Grotesque']">
                 1-Min Mindful Breathing
@@ -877,7 +877,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
                 setShowBreathingModal(false);
                 setIsBreathingActive(false);
               }}
-              className="w-full bg-[#1A1A1A] text-white py-3 doodle-border border-[#1A1A1A] rounded-xl font-bold text-xs doodle-btn"
+              className="w-full bg-[var(--ink-solid)] text-white py-3 doodle-border border-[var(--ink-black)] rounded-xl font-bold text-xs doodle-btn"
             >
               Done & Feel Relaxed ✨
             </button>
