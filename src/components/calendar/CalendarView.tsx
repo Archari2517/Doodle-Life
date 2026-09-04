@@ -17,7 +17,8 @@ import {
   Layers,
   LayoutGrid,
   List,
-  Repeat
+  Repeat,
+  MapPin
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { toLocalDateStr } from '../../utils/date';
@@ -83,6 +84,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   // New Task Form State
   const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newLocation, setNewLocation] = useState('');
   const [newCategory, setNewCategory] = useState('STUDY');
   const [newTime, setNewTime] = useState('09:00');
   const [newEndTime, setNewEndTime] = useState('09:30');
@@ -363,6 +366,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
     onAddTask({
       title: newTitle.trim(),
+      description: newDescription.trim() || undefined,
+      location: newLocation.trim() || undefined,
       category: newCategory,
       // ไม่ระบุเวลา ➔ dueTime ว่าง '' และไม่มี endTime (เหมือน Flex Habit ที่มาจาก Routine)
       dueTime: newIsFlexTime ? '' : newTime,
@@ -375,6 +380,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     });
 
     setNewTitle('');
+    setNewDescription('');
+    setNewLocation('');
     setShowAddModal(false);
   };
 
@@ -776,6 +783,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       </p>
                     )}
 
+                    {task.location && (
+                      <p className="text-xs text-gray-500 line-clamp-1 mt-0.5 flex items-center gap-1">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        {task.location}
+                      </p>
+                    )}
+
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span 
@@ -923,6 +937,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 />
               </div>
 
+              <div>
+                <label className="block mb-1 text-gray-700">{t.taskDescription}</label>
+                <input
+                  type="text"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder={t.taskDescriptionPlaceholder}
+                  className="w-full px-3 py-2 doodle-border-sm focus:outline-none focus:bg-amber-50 font-normal"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block mb-1 text-gray-700">Category</label>
@@ -1000,36 +1025,49 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </div>
               )}
 
-              <div>
-                {/* 🔹 แยกส่วนใส่ระยะเวลา Hours / Mins — ผูกกับ Start/End Time ด้านบน */}
-                <label className="block mb-1 text-gray-700">Duration</label>
-                <div className="flex gap-1 items-center max-w-[calc(50%-4px)]">
-                  <div className="flex-1">
-                    <input
-                      type="number"
-                      min="0"
-                      max="24"
-                      placeholder="0"
-                      value={durationHours}
-                      onChange={(e) => handleDurationHoursChange(Math.max(0, Number(e.target.value)))}
-                      className="w-full px-2 py-2 doodle-border-sm bg-white text-center font-bold"
-                    />
-                    <span className="text-[10px] text-gray-500 block text-center mt-0.5">hrs</span>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  {/* 🔹 แยกส่วนใส่ระยะเวลา Hours / Mins — ผูกกับ Start/End Time ด้านบน */}
+                  <label className="block mb-1 text-gray-700">Duration</label>
+                  <div className="flex gap-1 items-center">
+                    <div className="flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="24"
+                        placeholder="0"
+                        value={durationHours}
+                        onChange={(e) => handleDurationHoursChange(Math.max(0, Number(e.target.value)))}
+                        className="w-full px-2 py-2 doodle-border-sm bg-white text-center font-bold"
+                      />
+                      <span className="text-[10px] text-gray-500 block text-center mt-0.5">hrs</span>
+                    </div>
+                    <span className="font-bold">:</span>
+                    <div className="flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        step="5"
+                        placeholder="30"
+                        value={durationMins}
+                        onChange={(e) => handleDurationMinsChange(Math.max(0, Number(e.target.value)))}
+                        className="w-full px-2 py-2 doodle-border-sm bg-white text-center font-bold"
+                      />
+                      <span className="text-[10px] text-gray-500 block text-center mt-0.5">mins</span>
+                    </div>
                   </div>
-                  <span className="font-bold">:</span>
-                  <div className="flex-1">
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      step="5"
-                      placeholder="30"
-                      value={durationMins}
-                      onChange={(e) => handleDurationMinsChange(Math.max(0, Number(e.target.value)))}
-                      className="w-full px-2 py-2 doodle-border-sm bg-white text-center font-bold"
-                    />
-                    <span className="text-[10px] text-gray-500 block text-center mt-0.5">mins</span>
-                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-gray-700">{t.taskLocation}</label>
+                  <input
+                    type="text"
+                    value={newLocation}
+                    onChange={(e) => setNewLocation(e.target.value)}
+                    placeholder={t.taskLocationPlaceholder}
+                    className="w-full px-3 py-2 doodle-border-sm bg-white focus:outline-none focus:bg-amber-50 font-normal h-[38px]"
+                  />
                 </div>
               </div>
 

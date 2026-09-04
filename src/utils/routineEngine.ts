@@ -82,6 +82,7 @@ export function getEffectiveStartDate(routine: Routine, rangeStart: string): str
  *  2) วันนั้นอยู่ในช่วง endDate ของ Routine หรือไม่ (ถ้าเป็น date_range)
  *  3) วันนั้นตรงกับ daysOfWeek (จ.-อา.) ที่ตั้งไว้หรือไม่
  *  4) Routine นั้นยัง active อยู่หรือไม่
+ *  5) วันนั้นไม่ได้ถูกผู้ใช้ "ลบทิ้งเฉพาะวันนี้" ไว้ก่อนหน้า (excludedDates)
  *
  * @param rangeStart วันแรกของช่วงที่กำลังคำนวณ/เปิดดู ("YYYY-MM-DD") ใช้เทียบหา Effective Start Date
  */
@@ -97,6 +98,9 @@ export function isRoutineActiveOnDate(
 
   // เงื่อนไข 3: วันในสัปดาห์
   if (!routine.days || !routine.days.includes(dayKey)) return false;
+
+  // เงื่อนไข 5: วันที่ผู้ใช้เคยกดลบ Event ของวันนี้ทิ้งไปแล้ว (ไม่ต้องการให้ Event กลับมาใหม่)
+  if (routine.excludedDates && routine.excludedDates.includes(dateStr)) return false;
 
   // เงื่อนไข 1: วันเริ่มต้นคำนวณ (Max Date ระหว่างวันแรกของช่วงที่ดู กับวันเริ่มต้น Routine จริง)
   const effectiveStart = getEffectiveStartDate(routine, rangeStart);

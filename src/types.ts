@@ -26,6 +26,7 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
+  location?: string; // สถานที่ (ไม่บังคับ) เช่น "ห้องสมุด", "ห้อง 204"
   category: string; // 'DATABASE' | 'MEETING' | 'STUDY' | 'WORK' | 'FITNESS' | 'UNWIND' | 'HOME_FAMILY' | 'EVENTS' | 'FINANCE' | etc.
   categoryColor?: string;
   eisenhowerQuadrant: EisenhowerQuadrant;
@@ -93,6 +94,9 @@ export interface Routine {
   // 🗂️ Lifecycle & Categories — จัดการการหมดอายุของ Routine
   status?: RoutineStatus; // ค่าเริ่มต้นถือว่าเป็น 'active' ถ้าไม่ระบุ ระบบจะตั้งเป็น 'expired' อัตโนมัติเมื่อเลย endDate
   expiredAcknowledged?: boolean; // ผู้ใช้กดรับทราบ/ปิด popup แจ้งเตือนหมดอายุของ Routine นี้แล้ว
+  // 🗓️ วันที่ผู้ใช้ลบ Event ของ Routine นี้ออกไปเฉพาะวันนั้น (ไม่ได้ลบทั้ง Routine)
+  // เก็บเป็น "YYYY-MM-DD" — Generation Engine จะข้ามวันเหล่านี้ไป ไม่สร้าง Event ซ้ำกลับมาอีก
+  excludedDates?: string[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -131,5 +135,5 @@ export interface UnwindActivity {
   description: string;
 }
 
-export type ActiveTab = 'calendar' | 'tasks' | 'chat' | 'myspace' | 'settings' | 'goals_flow';
+export type ActiveTab = 'calendar' | 'tasks' | 'chat' | 'myspace' | 'settings' | 'goals_flow' | 'groups';
 export type MySpaceSubTab = 'overview' | 'journal' | 'unwind';

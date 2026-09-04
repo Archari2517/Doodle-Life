@@ -26,6 +26,9 @@ const GoalsView = lazy(() =>
 const ProfileView = lazy(() =>
   import('./components/settings/ProfileView').then(m => ({ default: m.ProfileView }))
 );
+const GroupsView = lazy(() =>
+  import('./components/groups/GroupsView').then(m => ({ default: m.GroupsView }))
+);
 
 const ViewLoadingFallback: React.FC = () => (
   <div className="flex items-center justify-center py-24">
@@ -162,10 +165,9 @@ const MainContent: React.FC = () => {
       <Header
         user={user}
         activeTab={activeTab}
-        isOnline={isOnline}
         isSyncing={isSyncing}
-        onSync={syncNow}
         onOpenSettings={() => setIsProfileOpen(true)}
+        onNavigateSettings={() => setActiveTab('settings')}
       />
 
       <main className="flex-1 w-full max-w-md mx-auto relative">
@@ -240,6 +242,10 @@ const MainContent: React.FC = () => {
               onLogout={handleLogout}
               onDeleteAccount={handleDeleteAccount}
             />
+          )}
+
+          {activeTab === 'groups' && (
+            <GroupsView user={user} />
           )}
 
           {activeTab === 'goals_flow' && (

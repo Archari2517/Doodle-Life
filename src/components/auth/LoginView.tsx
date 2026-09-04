@@ -61,7 +61,7 @@ export const LoginView: React.FC = () => {
   // 3. Handle Email Sign In (หน้าหลัก — สำหรับผู้ที่มีบัญชีอยู่แล้วเท่านั้น)
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (loading || !email || !password) return;
 
     try {
       setLoading(true);

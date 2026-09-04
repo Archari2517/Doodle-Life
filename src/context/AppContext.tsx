@@ -316,9 +316,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  // 🔁 ลบ Event หนึ่งวันของ Task/Routine
+  // - ถ้า Task นี้ไม่ได้มาจาก Routine (สร้างเองโดยผู้ใช้) ➔ ลบ document ตามปกติ
+  // - ถ้า Task นี้เป็น Event ที่ Routine สร้างให้ (isRoutineGenerated/routineId) ➔ นอกจากลบ
+  //   document ของวันนั้นแล้ว ต้องบันทึก dueDate ลงใน routine.excludedDates ด้วย
+  //   ไม่งั้นครั้งถัดไปที่ ensureMonthEvents คำนวณ Event ของเดือนนี้ใหม่ (เช่น เปลี่ยนเดือนไปมา
+  //   หรือรีเฟรชแอป) Generation Engine จะไม่รู้ว่าผู้ใช้ลบวันนี้ไปแล้ว และจะสร้าง Event
+  //   deterministic id เดิม (routine_{routineId}_{dueDate}) กลับมาซ้ำอีก
   const deleteTask = async (taskId: string) => {
     if (!authUser) return;
+    const task = tasks.find((t) => t.id === taskId);
     await deleteDoc(doc(db, 'users', authUser.uid, 'tasks', taskId));
+
+    if (task?.routineId && task.dueDate) {
+      const targetRoutine = routines.find((r) => r.id === task.routineId);
+      if (targetRoutine) {
+        const alreadyExcluded = targetRoutine.excludedDates || [];
+        if (!alreadyExcluded.includes(task.dueDate)) {
+          await setDoc(
+            doc(db, 'users', authUser.uid, 'routines', task.routineId),
+            { excludedDates: [...alreadyExcluded, task.dueDate] },
+            { merge: true }
+          );
+        }
+      }
+    }
   };
 
   const rescheduleBatch = async (proposals: RescheduleProposal[]) => {

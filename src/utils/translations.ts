@@ -8,6 +8,7 @@ export const translations = {
     chat: 'Chat',
     mySpace: 'My Space',
     settings: 'Settings',
+    groups: 'Groups',
 
     // Calendar Tab
     studentAssistant: 'Student Assistant',
@@ -18,6 +19,10 @@ export const translations = {
     addTask: 'Add Task',
     editTask: 'Edit Task',
     taskTitle: 'Task Title',
+    taskDescription: 'Description (Optional)',
+    taskDescriptionPlaceholder: 'Add more details...',
+    taskLocation: 'Location (Optional)',
+    taskLocationPlaceholder: 'e.g. Library, Room 204',
     category: 'Category',
     dueTime: 'Time',
     duration: 'Duration (mins)',
@@ -94,6 +99,9 @@ export const translations = {
     oneMinBreathing: '1-Min Breathing',
     ambientSounds: 'Ambient Sounds',
 
+    // Groups Tab
+    groupsTitle: 'Groups',
+
     // Settings Tab & Sub-pages
     settingsTitle: 'Settings',
     displayAndLanguage: 'Display & Language',
@@ -134,6 +142,7 @@ export const translations = {
     chat: 'แชท AI',
     mySpace: 'พื้นที่ของฉัน',
     settings: 'การตั้งค่า',
+    groups: 'กลุ่ม',
 
     // Calendar Tab
     studentAssistant: 'ผู้ช่วยอัจฉริยะ',
@@ -144,6 +153,10 @@ export const translations = {
     addTask: 'เพิ่มงานใหม่',
     editTask: 'แก้ไขงาน',
     taskTitle: 'ชื่องาน',
+    taskDescription: 'รายละเอียด (ไม่บังคับ)',
+    taskDescriptionPlaceholder: 'เพิ่มรายละเอียดเกี่ยวกับงานนี้...',
+    taskLocation: 'สถานที่ (ไม่บังคับ)',
+    taskLocationPlaceholder: 'เช่น ห้องสมุด, ห้อง 204',
     category: 'หมวดหมู่',
     dueTime: 'เวลา',
     duration: 'ระยะเวลา (นาที)',
@@ -220,6 +233,8 @@ export const translations = {
     ambientSounds: 'เสียงธรรมชาติบำบัด',
 
     // Settings Tab & Sub-pages
+    groupsTitle: 'กลุ่ม 👥',
+
     settingsTitle: 'การตั้งค่า ⚙️',
     displayAndLanguage: 'การแสดงผลและภาษา',
     appearance: 'ธีมสี',

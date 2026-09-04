@@ -1,24 +1,22 @@
 import React from 'react';
 import { UserProfile, ActiveTab } from '../../types';
 import { useTranslation } from '../../utils/translations';
-import { Sparkles, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Sparkles, RefreshCw, Settings } from 'lucide-react';
 
 interface HeaderProps {
   user: UserProfile;
   activeTab: ActiveTab;
-  isOnline: boolean;
   isSyncing: boolean;
-  onSync: () => void;
   onOpenSettings: () => void;
+  onNavigateSettings: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   user,
   activeTab,
-  isOnline,
   isSyncing,
-  onSync,
-  onOpenSettings
+  onOpenSettings,
+  onNavigateSettings
 }) => {
   const t = useTranslation(user.language);
 
@@ -32,6 +30,8 @@ export const Header: React.FC<HeaderProps> = ({
         return t.aiChatTitle;
       case 'myspace':
         return t.mySpaceTitle;
+      case 'groups':
+        return t.groupsTitle;
       case 'settings':
       case 'goals_flow':
         return t.settingsTitle;
@@ -87,20 +87,17 @@ export const Header: React.FC<HeaderProps> = ({
           {getTitle()}
         </h1>
 
-        {/* Right: Sync & Status Actions */}
+        {/* Right: Settings Shortcut */}
         <div className="flex items-center gap-1.5">
           <button
-            onClick={onSync}
-            disabled={isSyncing}
+            onClick={onNavigateSettings}
             className="p-2 doodle-border-sm bg-white dark:bg-[var(--card-bg)] hover:bg-[var(--accent-color)] doodle-shadow-sm doodle-btn flex items-center justify-center text-xs font-bold shrink-0"
-            title={isOnline ? 'Sync with Firebase' : 'Offline (waiting to reconnect)'}
+            title={t.settings}
           >
             {isSyncing ? (
               <RefreshCw className="w-4 h-4 animate-spin text-[var(--text-main)]" />
-            ) : isOnline ? (
-              <Wifi className="w-4 h-4 text-emerald-600" />
             ) : (
-              <WifiOff className="w-4 h-4 text-amber-600" />
+              <Settings className="w-4 h-4 text-[var(--text-main)]" />
             )}
           </button>
 

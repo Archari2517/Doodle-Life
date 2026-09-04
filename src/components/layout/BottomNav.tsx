@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActiveTab, Language } from '../../types';
 import { useTranslation } from '../../utils/translations';
-import { Calendar, CheckSquare, MessageSquare, Sprout, Settings } from 'lucide-react';
+import { Calendar, CheckSquare, MessageSquare, Sprout, Users } from 'lucide-react';
 
 interface BottomNavProps {
   activeTab: ActiveTab;
@@ -49,9 +49,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       icon: <Sprout className="w-5 h-5" />
     },
     {
-      id: 'settings',
-      label: t.settings,
-      icon: <Settings className="w-5 h-5" />
+      id: 'groups',
+      label: t.groups,
+      icon: <Users className="w-5 h-5" />
     }
   ];
 
@@ -59,7 +59,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--paper-bg)] border-t-[3px] border-[var(--ink-black)] py-2 px-3 shadow-[0_-3px_0px_var(--ink-black)] transition-colors duration-200">
       <div className="max-w-md mx-auto flex items-center justify-around gap-1">
         {tabs.map((tab) => {
-          const isActive = activeTab === tab.id || (tab.id === 'settings' && activeTab === 'goals_flow');
+          const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}

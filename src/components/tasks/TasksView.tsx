@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Task, UserProfile, Goal, EisenhowerQuadrant } from '../../types';
 import { useTranslation } from '../../utils/translations';
 import { getLocalTodayStr } from '../../utils/date';
-import { Check, Trash2, Clock, Pencil, X } from 'lucide-react';
+import { Check, Trash2, Clock, Pencil, X, MapPin } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface TasksViewProps {
@@ -50,6 +50,8 @@ export const TasksView: React.FC<TasksViewProps> = ({
   // ----------------------------------------------------
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editLocation, setEditLocation] = useState('');
   const [editStartTime, setEditStartTime] = useState('09:00');
   const [editEndTime, setEditEndTime] = useState('09:30');
   const [editDurationHours, setEditDurationHours] = useState(0);
@@ -76,6 +78,8 @@ export const TasksView: React.FC<TasksViewProps> = ({
   const openEditModal = (task: Task) => {
     setEditingTask(task);
     setEditTitle(task.title);
+    setEditDescription(task.description || '');
+    setEditLocation(task.location || '');
     const duration = task.durationMinutes || 0;
     setEditDurationHours(Math.floor(duration / 60));
     setEditDurationMins(duration % 60);
@@ -128,6 +132,8 @@ export const TasksView: React.FC<TasksViewProps> = ({
     onUpdateTask({
       ...editingTask,
       title: editTitle.trim() || editingTask.title,
+      description: editDescription.trim() || undefined,
+      location: editLocation.trim() || undefined,
       // ไม่ระบุเวลา ➔ dueTime ว่าง '' และไม่มี endTime (เหมือนตอนเพิ่มงานใหม่)
       dueTime: editIsFlexTime ? '' : editStartTime,
       endTime: editIsFlexTime ? undefined : editEndTime,
@@ -402,6 +408,23 @@ export const TasksView: React.FC<TasksViewProps> = ({
                       </div>
                     </div>
 
+                    {task.description && (
+                      <p className={`text-[11px] font-normal leading-snug line-clamp-2 mt-0.5 ${
+                        task.completed ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        {task.description}
+                      </p>
+                    )}
+
+                    {task.location && (
+                      <p className={`text-[11px] font-normal leading-snug line-clamp-1 mt-0.5 flex items-center gap-1 ${
+                        task.completed ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        {task.location}
+                      </p>
+                    )}
+
                     <div className="flex items-center justify-between mt-2 pt-1 border-t border-dashed border-gray-200">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {linkedGoal && (
@@ -451,6 +474,17 @@ export const TasksView: React.FC<TasksViewProps> = ({
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   className="w-full px-3 py-2 doodle-border-sm bg-white focus:outline-none focus:bg-amber-50"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 text-gray-700">{t.taskDescription}</label>
+                <input
+                  type="text"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder={t.taskDescriptionPlaceholder}
+                  className="w-full px-3 py-2 doodle-border-sm bg-white focus:outline-none focus:bg-amber-50 font-normal"
                 />
               </div>
 
@@ -530,18 +564,29 @@ export const TasksView: React.FC<TasksViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block mb-1 text-gray-700">Quadrant</label>
-                  <select
-                    value={editQuadrant}
-                    onChange={(e) => setEditQuadrant(e.target.value as EisenhowerQuadrant)}
-                    className="w-full px-2 py-2 doodle-border-sm bg-white"
-                  >
-                    <option value="now">Do Now (Urgent & Important)</option>
-                    <option value="plan">Schedule (Important)</option>
-                    <option value="quick">Delegate / Quick</option>
-                    <option value="chill">Don't Do / Chill</option>
-                  </select>
+                  <label className="block mb-1 text-gray-700">{t.taskLocation}</label>
+                  <input
+                    type="text"
+                    value={editLocation}
+                    onChange={(e) => setEditLocation(e.target.value)}
+                    placeholder={t.taskLocationPlaceholder}
+                    className="w-full px-3 py-2 doodle-border-sm bg-white focus:outline-none focus:bg-amber-50 font-normal h-[38px]"
+                  />
                 </div>
+              </div>
+
+              <div>
+                <label className="block mb-1 text-gray-700">Quadrant</label>
+                <select
+                  value={editQuadrant}
+                  onChange={(e) => setEditQuadrant(e.target.value as EisenhowerQuadrant)}
+                  className="w-full px-2 py-2 doodle-border-sm bg-white"
+                >
+                  <option value="now">Do Now (Urgent & Important)</option>
+                  <option value="plan">Schedule (Important)</option>
+                  <option value="quick">Delegate / Quick</option>
+                  <option value="chill">Don't Do / Chill</option>
+                </select>
               </div>
 
               {goals.length > 0 && (
